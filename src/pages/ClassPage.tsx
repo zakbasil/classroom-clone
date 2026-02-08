@@ -6,6 +6,7 @@ import { StreamTab } from '@/components/class/StreamTab';
 import { ClassworkTab } from '@/components/class/ClassworkTab';
 import { PeopleTab } from '@/components/class/PeopleTab';
 import { MaterialsTab } from '@/components/class/MaterialsTab';
+import { StreamCodeDisplay } from '@/components/class/StreamCodeDisplay';
 import { cn } from '@/lib/utils';
 
 const colorClasses: Record<string, string> = {
@@ -20,9 +21,10 @@ const colorClasses: Record<string, string> = {
 export default function ClassPage() {
   const { classId, tab = 'stream' } = useParams<{ classId: string; tab?: string }>();
   const navigate = useNavigate();
-  const { getClassById } = useApp();
+  const { getClassById, isTeacherOfClass } = useApp();
 
   const classData = classId ? getClassById(classId) : undefined;
+  const isTeacher = classId ? isTeacherOfClass(classId) : false;
 
   if (!classData) {
     return (
@@ -52,6 +54,13 @@ export default function ClassPage() {
               <p className="text-white/80 text-sm mt-1">{classData.room}</p>
             )}
           </div>
+          
+          {/* Stream Code for Teachers */}
+          {isTeacher && (
+            <div className="absolute top-4 right-4 max-w-xs">
+              <StreamCodeDisplay streamCode={classData.streamCode} />
+            </div>
+          )}
         </div>
 
         {/* Tabs */}

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -7,7 +8,8 @@ import {
   ClipboardCheck, 
   BarChart3, 
   FolderOpen,
-  ArrowRight
+  ArrowRight,
+  LogIn
 } from 'lucide-react';
 
 const features = [
@@ -35,16 +37,30 @@ const features = [
 
 export default function Welcome() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen gradient-hero">
       {/* Header */}
       <header className="px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl gradient-primary shadow-soft">
-            <GraduationCap className="w-6 h-6 text-primary-foreground" />
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl gradient-primary shadow-soft">
+              <GraduationCap className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-semibold text-foreground">Classroom</span>
           </div>
-          <span className="text-xl font-semibold text-foreground">Classroom</span>
+          {user ? (
+            <Button onClick={() => navigate('/dashboard')} variant="outline">
+              Go to Dashboard
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : (
+            <Button onClick={() => navigate('/auth')} variant="outline">
+              <LogIn className="w-4 h-4 mr-2" />
+              Sign In
+            </Button>
+          )}
         </div>
       </header>
 
@@ -64,16 +80,27 @@ export default function Welcome() {
               organize coursework, and achieve more together.
             </p>
 
-            {/* CTA Button */}
-            <Button
-              size="lg"
-              onClick={() => navigate('/dashboard')}
-              className="h-14 px-8 text-base font-medium gradient-primary hover:opacity-90 transition-opacity shadow-soft rounded-2xl"
-            >
-              <GraduationCap className="w-5 h-5 mr-2" />
-              Get Started
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+            {user ? (
+              <Button
+                size="lg"
+                onClick={() => navigate('/dashboard')}
+                className="h-14 px-8 text-base font-medium gradient-primary hover:opacity-90 transition-opacity shadow-soft rounded-2xl"
+              >
+                <GraduationCap className="w-5 h-5 mr-2" />
+                Go to Dashboard
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            ) : (
+              <Button
+                size="lg"
+                onClick={() => navigate('/auth')}
+                className="h-14 px-8 text-base font-medium gradient-primary hover:opacity-90 transition-opacity shadow-soft rounded-2xl"
+              >
+                <GraduationCap className="w-5 h-5 mr-2" />
+                Get Started
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            )}
           </div>
 
           {/* Features Grid */}

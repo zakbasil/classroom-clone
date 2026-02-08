@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,25 +10,28 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Clock, Maximize, AlertTriangle, FileText, Trophy, Timer, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Maximize, AlertTriangle, FileText, Trophy, Timer, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SubmissionsLeaderboard } from '@/components/class/SubmissionsLeaderboard';
 import { QuizTimer, useQuizDeadline } from '@/components/class/QuizTimer';
 import { format } from 'date-fns';
 import type { QuizAttempt } from '@/types/classwork';
+import type { Quiz, SubmissionEntry } from '@/contexts/DataContext';
 
 const CACHE_KEY_PREFIX = 'quiz_attempt_';
 
 export default function QuizPage() {
   const { classId, quizId } = useParams<{ classId: string; quizId: string }>();
   const navigate = useNavigate();
-  const { getQuizById, getClassById, isCreatorOfClass, getQuizSubmissions, getStudentsByClass, submitQuizAttempt } = useApp();
+  const { getQuizById, getClassById, isCreatorOfClass, getQuizSubmissions, submitQuizAttempt, getClassMembers } = useData();
+  const { profile } = useAuth();
   
-  const quiz = quizId ? getQuizById(quizId) : undefined;
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(true);
+  const [quizSubmissions, setQuizSubmissions] = useState<SubmissionEntry[]>([]);
+  const [studentCount, setStudentCount] = useState(0);
   const classData = classId ? getClassById(classId) : undefined;
   const isCreator = classId ? isCreatorOfClass(classId) : false;
-  const quizSubmissions = quizId ? getQuizSubmissions(quizId) : [];
-  const students = classId ? getStudentsByClass(classId) : [];
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -39,9 +43,37 @@ export default function QuizPage() {
   // Check if deadline has passed
   const isPastDeadline = useQuizDeadline(quiz?.dueDate || new Date().toISOString());
 
+  // Load quiz data
+  useEffect(() => {
+    async function loadQuiz() {
+      if (!quizId) return;
+      
+      setIsLoadingQuiz(true);
+      try {
+        const quizData = await getQuizById(quizId);
+        setQuiz(quizData);
+        
+        if (quizData) {
+          const submissions = await getQuizSubmissions(quizId);
+          setQuizSubmissions(submissions);
+        }
+        
+        if (classId) {
+          const members = await getClassMembers(classId);
+          setStudentCount(members.filter(m => !m.isCreator).length);
+        }
+      } catch (error) {
+        console.error('Error loading quiz:', error);
+      } finally {
+        setIsLoadingQuiz(false);
+      }
+    }
+    loadQuiz();
+  }, [quizId, classId]);
+
   // Load cached attempt
   useEffect(() => {
-    if (quizId && !isCreator) {
+    if (quizId && !isCreator && quiz) {
       const cached = localStorage.getItem(`${CACHE_KEY_PREFIX}${quizId}`);
       if (cached) {
         try {
@@ -52,7 +84,7 @@ export default function QuizPage() {
             if (attempt.timerStartedAt) {
               setTimerStartedAt(attempt.timerStartedAt);
               // Check if timer already expired
-              if (quiz?.timeLimit) {
+              if (quiz.timeLimit) {
                 const startTime = new Date(attempt.timerStartedAt).getTime();
                 const endTime = startTime + quiz.timeLimit * 60 * 1000;
                 if (Date.now() > endTime) {
@@ -69,7 +101,7 @@ export default function QuizPage() {
         }
       }
     }
-  }, [quizId, isCreator, quiz?.timeLimit]);
+  }, [quizId, isCreator, quiz]);
 
   // Save to cache whenever answers change
   useEffect(() => {
@@ -131,55 +163,8 @@ export default function QuizPage() {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
-  const handleTimerExpire = useCallback(() => {
-    setIsTimerExpired(true);
-    exitFullscreen();
-    toast.error('Time is up! Your quiz has been automatically saved.');
-    
-    // Auto-submit current answers
-    if (quizId) {
-      const attempt: QuizAttempt = {
-        quizId,
-        answers,
-        startedAt: timerStartedAt || new Date().toISOString(),
-        submittedAt: new Date().toISOString(),
-        timerStartedAt: timerStartedAt || undefined,
-      };
-      localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
-      submitQuizAttempt(quizId, answers);
-    }
-  }, [quizId, answers, timerStartedAt, exitFullscreen, submitQuizAttempt]);
-
-  const handleSubmit = () => {
-    if (!quiz || isTimerExpired || isPastDeadline) return;
-
-    // Check for unanswered questions
-    const unanswered = quiz.questions.filter(q => !answers[q.id]);
-    if (unanswered.length > 0) {
-      toast.error(`Please answer all questions. ${unanswered.length} remaining.`);
-      return;
-    }
-
-    // Save as submitted
-    const attempt: QuizAttempt = {
-      quizId: quizId!,
-      answers,
-      startedAt: timerStartedAt || new Date().toISOString(),
-      submittedAt: new Date().toISOString(),
-      timerStartedAt: timerStartedAt || undefined,
-    };
-    localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
-    
-    // Submit to context for leaderboard
-    submitQuizAttempt(quizId!, answers);
-    
-    setIsSubmitted(true);
-    exitFullscreen();
-    toast.success('Quiz submitted successfully!');
-  };
-
-  // Calculate score for results view
-  const calculateScore = () => {
+  // Calculate score
+  const calculateScore = useCallback(() => {
     if (!quiz) return { score: 0, total: 0, percentage: 0 };
     let score = 0;
     quiz.questions.forEach(q => {
@@ -192,7 +177,83 @@ export default function QuizPage() {
       total: quiz.totalPoints,
       percentage: Math.round((score / quiz.totalPoints) * 100),
     };
+  }, [quiz, answers]);
+
+  const handleTimerExpire = useCallback(async () => {
+    setIsTimerExpired(true);
+    exitFullscreen();
+    toast.error('Time is up! Your quiz has been automatically saved.');
+    
+    // Auto-submit current answers
+    if (quizId && quiz) {
+      const { score } = calculateScore();
+      const timeTaken = timerStartedAt 
+        ? Math.floor((Date.now() - new Date(timerStartedAt).getTime()) / 1000)
+        : undefined;
+      
+      const attempt: QuizAttempt = {
+        quizId,
+        answers,
+        startedAt: timerStartedAt || new Date().toISOString(),
+        submittedAt: new Date().toISOString(),
+        timerStartedAt: timerStartedAt || undefined,
+      };
+      localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
+      
+      try {
+        await submitQuizAttempt(quizId, answers, score, timeTaken);
+      } catch (error) {
+        console.error('Error submitting quiz:', error);
+      }
+    }
+  }, [quizId, quiz, answers, timerStartedAt, exitFullscreen, submitQuizAttempt, calculateScore]);
+
+  const handleSubmit = async () => {
+    if (!quiz || isTimerExpired || isPastDeadline) return;
+
+    // Check for unanswered questions
+    const unanswered = quiz.questions.filter(q => !answers[q.id]);
+    if (unanswered.length > 0) {
+      toast.error(`Please answer all questions. ${unanswered.length} remaining.`);
+      return;
+    }
+
+    const { score } = calculateScore();
+    const timeTaken = timerStartedAt 
+      ? Math.floor((Date.now() - new Date(timerStartedAt).getTime()) / 1000)
+      : undefined;
+
+    // Save as submitted
+    const attempt: QuizAttempt = {
+      quizId: quizId!,
+      answers,
+      startedAt: timerStartedAt || new Date().toISOString(),
+      submittedAt: new Date().toISOString(),
+      timerStartedAt: timerStartedAt || undefined,
+    };
+    localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
+    
+    // Submit to database
+    try {
+      await submitQuizAttempt(quizId!, answers, score, timeTaken);
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+    }
+    
+    setIsSubmitted(true);
+    exitFullscreen();
+    toast.success('Quiz submitted successfully!');
   };
+
+  if (isLoadingQuiz) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!quiz || !classData) {
     return (
@@ -269,7 +330,7 @@ export default function QuizPage() {
               <SubmissionsLeaderboard 
                 submissions={quizSubmissions}
                 title={quiz.title}
-                totalStudents={students.length}
+                totalStudents={studentCount}
               />
             </TabsContent>
 
@@ -554,16 +615,7 @@ export default function QuizPage() {
 }
 
 interface QuizContentProps {
-  quiz: {
-    title: string;
-    totalPoints: number;
-    questions: {
-      id: string;
-      text: string;
-      points: number;
-      options?: { id: string; text: string }[];
-    }[];
-  };
+  quiz: Quiz;
   answers: Record<string, string>;
   onAnswerChange: (questionId: string, answer: string) => void;
   onSubmit: () => void;

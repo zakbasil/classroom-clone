@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StreamTab } from '@/components/class/StreamTab';
@@ -8,6 +8,7 @@ import { PeopleTab } from '@/components/class/PeopleTab';
 import { MaterialsTab } from '@/components/class/MaterialsTab';
 import { StreamCodeDisplay } from '@/components/class/StreamCodeDisplay';
 import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 
 const colorClasses: Record<string, string> = {
   'class-blue': 'bg-class-blue',
@@ -21,10 +22,20 @@ const colorClasses: Record<string, string> = {
 export default function ClassPage() {
   const { classId, tab = 'stream' } = useParams<{ classId: string; tab?: string }>();
   const navigate = useNavigate();
-  const { getClassById, isCreatorOfClass } = useApp();
+  const { getClassById, isCreatorOfClass, isLoading } = useData();
 
   const classData = classId ? getClassById(classId) : undefined;
   const isCreator = classId ? isCreatorOfClass(classId) : false;
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!classData) {
     return (

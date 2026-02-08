@@ -1,22 +1,59 @@
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { UserPlus, Mail, Users } from 'lucide-react';
+import { UserPlus, Mail, Users, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface PeopleTabProps {
   classId: string;
 }
 
+interface ClassMember {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  isCreator: boolean;
+}
+
 export function PeopleTab({ classId }: PeopleTabProps) {
-  const { getStudentsByClass, getClassById, isCreatorOfClass } = useApp();
-  const students = getStudentsByClass(classId);
+  const { getClassMembers, getClassById, isCreatorOfClass } = useData();
+  const [members, setMembers] = useState<ClassMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const classData = getClassById(classId);
   const isCreator = isCreatorOfClass(classId);
+
+  useEffect(() => {
+    loadMembers();
+  }, [classId]);
+
+  const loadMembers = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getClassMembers(classId);
+      setMembers(data);
+    } catch (error) {
+      console.error('Error loading members:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
+
+  const creator = members.find(m => m.isCreator);
+  const students = members.filter(m => !m.isCreator);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto py-12 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
@@ -30,11 +67,11 @@ export function PeopleTab({ classId }: PeopleTabProps) {
             <div className="flex items-center gap-4">
               <Avatar className="w-12 h-12">
                 <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                  {classData ? getInitials(classData.creatorName) : 'C'}
+                  {creator ? getInitials(creator.name) : classData ? getInitials(classData.creatorName) : 'C'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-medium text-foreground">{classData?.creatorName}</p>
+                <p className="font-medium text-foreground">{creator?.name || classData?.creatorName}</p>
                 <p className="text-sm text-muted-foreground">Creator</p>
               </div>
               <Button variant="ghost" size="icon" className="text-muted-foreground">

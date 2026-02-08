@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { NavLink } from '@/components/NavLink';
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import {
   Sidebar,
   SidebarContent,
@@ -34,8 +34,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { getUserClasses } = useApp();
-  const userClasses = getUserClasses();
+  const { classes } = useData();
 
   const isActive = (path: string) => location.pathname === path;
   const isClassActive = (classId: string) => location.pathname.startsWith(`/class/${classId}`);
@@ -83,7 +82,7 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="mt-2">
-                {userClasses.map((classItem) => (
+                {classes.map((classItem) => (
                   <SidebarMenuItem key={classItem.id}>
                     <SidebarMenuButton asChild>
                       <NavLink

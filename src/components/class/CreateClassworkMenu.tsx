@@ -13,12 +13,17 @@ import { CreateMaterialDialog } from './CreateMaterialDialog';
 
 interface CreateClassworkMenuProps {
   classId: string;
+  onCreated?: () => void;
 }
 
-export function CreateClassworkMenu({ classId }: CreateClassworkMenuProps) {
+export function CreateClassworkMenu({ classId, onCreated }: CreateClassworkMenuProps) {
   const [quizDialogOpen, setQuizDialogOpen] = useState(false);
   const [questionsDialogOpen, setQuestionsDialogOpen] = useState(false);
   const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+
+  const handleCreated = () => {
+    onCreated?.();
+  };
 
   return (
     <>
@@ -48,17 +53,20 @@ export function CreateClassworkMenu({ classId }: CreateClassworkMenuProps) {
       <CreateQuizDialog 
         classId={classId} 
         open={quizDialogOpen} 
-        onOpenChange={setQuizDialogOpen} 
+        onOpenChange={setQuizDialogOpen}
+        onCreated={handleCreated}
       />
       <CreateQuestionsDialog 
         classId={classId} 
         open={questionsDialogOpen} 
-        onOpenChange={setQuestionsDialogOpen} 
+        onOpenChange={setQuestionsDialogOpen}
+        onCreated={handleCreated}
       />
       <CreateMaterialDialog 
         classId={classId} 
         open={materialDialogOpen} 
-        onOpenChange={setMaterialDialogOpen} 
+        onOpenChange={setMaterialDialogOpen}
+        onCreated={handleCreated}
       />
     </>
   );

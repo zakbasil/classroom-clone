@@ -1,19 +1,38 @@
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, ChevronRight, Clock, CheckCircle, AlertCircle, ClipboardList, FileQuestion } from 'lucide-react';
+import { FileText, ChevronRight, Clock, CheckCircle, AlertCircle, ClipboardList, FileQuestion, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { CreateClassworkMenu } from './CreateClassworkMenu';
+import { useState, useEffect } from 'react';
+import type { Assignment } from '@/contexts/DataContext';
 
 interface ClassworkTabProps {
   classId: string;
 }
 
 export function ClassworkTab({ classId }: ClassworkTabProps) {
-  const { getAssignmentsByClass, isCreatorOfClass } = useApp();
-  const assignments = getAssignmentsByClass(classId);
+  const { getAssignmentsByClass, isCreatorOfClass } = useData();
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const isCreator = isCreatorOfClass(classId);
+
+  useEffect(() => {
+    loadAssignments();
+  }, [classId]);
+
+  const loadAssignments = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getAssignmentsByClass(classId);
+      setAssignments(data);
+    } catch (error) {
+      console.error('Error loading assignments:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Group assignments by topic
   const groupedAssignments = assignments.reduce((acc, assignment) => {
@@ -64,7 +83,7 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
     }
   };
 
-  const getAssignmentLink = (assignment: typeof assignments[0]) => {
+  const getAssignmentLink = (assignment: Assignment) => {
     if (assignment.type === 'quiz' && assignment.quizId) {
       return `/class/${classId}/quiz/${assignment.quizId}`;
     }
@@ -74,12 +93,20 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
     return `/class/${classId}/assignment/${assignment.id}`;
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto py-12 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
       {/* Create Button (Creator only) */}
       {isCreator && (
         <div className="mb-6">
-          <CreateClassworkMenu classId={classId} />
+          <CreateClassworkMenu classId={classId} onCreated={loadAssignments} />
         </div>
       )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,9 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Clock, Code, FileText, Trophy } from 'lucide-react';
+import { ArrowLeft, Clock, Code, FileText, Trophy, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SubmissionsLeaderboard } from '@/components/class/SubmissionsLeaderboard';
+import type { QuestionSet, SubmissionEntry } from '@/contexts/DataContext';
 
 const CACHE_KEY_PREFIX = 'questions_attempt_';
 
@@ -27,20 +28,46 @@ interface QuestionAttempt {
 export default function QuestionsPage() {
   const { classId, questionSetId } = useParams<{ classId: string; questionSetId: string }>();
   const navigate = useNavigate();
-  const { getQuestionSetById, getClassById, isCreatorOfClass, getQuestionSetSubmissions, getStudentsByClass, submitQuestionSetAttempt } = useApp();
+  const { getQuestionSetById, getClassById, isCreatorOfClass, getClassMembers } = useData();
   
-  const questionSet = questionSetId ? getQuestionSetById(questionSetId) : undefined;
+  const [questionSet, setQuestionSet] = useState<QuestionSet | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [studentCount, setStudentCount] = useState(0);
   const classData = classId ? getClassById(classId) : undefined;
   const isCreator = classId ? isCreatorOfClass(classId) : false;
-  const questionSetSubmissions = questionSetId ? getQuestionSetSubmissions(questionSetId) : [];
-  const students = classId ? getStudentsByClass(classId) : [];
+
+  // Mock submissions for question sets (would need a separate API call in real impl)
+  const [questionSetSubmissions] = useState<SubmissionEntry[]>([]);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // Load question set data
+  useEffect(() => {
+    async function loadQuestionSet() {
+      if (!questionSetId) return;
+      
+      setIsLoading(true);
+      try {
+        const data = await getQuestionSetById(questionSetId);
+        setQuestionSet(data);
+        
+        if (classId) {
+          const members = await getClassMembers(classId);
+          setStudentCount(members.filter(m => !m.isCreator).length);
+        }
+      } catch (error) {
+        console.error('Error loading question set:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadQuestionSet();
+  }, [questionSetId, classId]);
+
   // Load cached attempt
   useEffect(() => {
-    if (questionSetId && !isCreator) {
+    if (questionSetId && !isCreator && questionSet) {
       const cached = localStorage.getItem(`${CACHE_KEY_PREFIX}${questionSetId}`);
       if (cached) {
         try {
@@ -56,7 +83,7 @@ export default function QuestionsPage() {
         }
       }
     }
-  }, [questionSetId, isCreator]);
+  }, [questionSetId, isCreator, questionSet]);
 
   // Save to cache whenever answers change
   useEffect(() => {
@@ -86,12 +113,19 @@ export default function QuestionsPage() {
     };
     localStorage.setItem(`${CACHE_KEY_PREFIX}${questionSetId}`, JSON.stringify(attempt));
     
-    // Submit to context for leaderboard
-    submitQuestionSetAttempt(questionSetId!, answers);
-    
     setIsSubmitted(true);
     toast.success('Answers submitted successfully!');
   };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!questionSet || !classData) {
     return (
@@ -148,7 +182,7 @@ export default function QuestionsPage() {
               <SubmissionsLeaderboard 
                 submissions={questionSetSubmissions}
                 title={questionSet.title}
-                totalStudents={students.length}
+                totalStudents={studentCount}
               />
             </TabsContent>
 

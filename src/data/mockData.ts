@@ -7,8 +7,10 @@ export const mockClasses: ClassData[] = [
     section: 'Period 1',
     subject: 'Mathematics',
     room: 'Room 204',
+    teacherId: 'teacher-1',
     teacherName: 'Sarah Johnson',
     coverColor: 'class-blue',
+    streamCode: 'MATH2026',
     studentCount: 28,
     upcomingAssignments: 3,
   },
@@ -18,8 +20,10 @@ export const mockClasses: ClassData[] = [
     section: 'Period 3',
     subject: 'English',
     room: 'Room 112',
+    teacherId: 'teacher-1',
     teacherName: 'Sarah Johnson',
     coverColor: 'class-purple',
+    streamCode: 'ENGL2026',
     studentCount: 24,
     upcomingAssignments: 2,
   },
@@ -29,8 +33,10 @@ export const mockClasses: ClassData[] = [
     section: 'Period 4',
     subject: 'History',
     room: 'Room 305',
+    teacherId: 'teacher-1',
     teacherName: 'Sarah Johnson',
     coverColor: 'class-green',
+    streamCode: 'HIST2026',
     studentCount: 26,
     upcomingAssignments: 1,
   },
@@ -40,8 +46,10 @@ export const mockClasses: ClassData[] = [
     section: 'Period 6',
     subject: 'Science',
     room: 'Lab 2',
+    teacherId: 'teacher-1',
     teacherName: 'Sarah Johnson',
     coverColor: 'class-orange',
+    streamCode: 'PHYS2026',
     studentCount: 22,
     upcomingAssignments: 4,
   },
@@ -51,11 +59,19 @@ export const mockClasses: ClassData[] = [
     section: 'Period 7',
     subject: 'English',
     room: 'Room 118',
+    teacherId: 'teacher-1',
     teacherName: 'Sarah Johnson',
     coverColor: 'class-teal',
+    streamCode: 'WRIT2026',
     studentCount: 18,
     upcomingAssignments: 2,
   },
+];
+
+// Initial enrollments for the student user
+export const mockEnrollments: { id: string; studentId: string; classId: string }[] = [
+  { id: 'enroll-1', studentId: 'student-1', classId: 'class-1' },
+  { id: 'enroll-2', studentId: 'student-1', classId: 'class-3' },
 ];
 
 export const mockAssignments: Assignment[] = [

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import {
   Dialog,
   DialogContent,
@@ -18,30 +18,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Question, QuestionType, QuestionOption } from '@/types/classwork';
+import type { Question, QuestionType } from '@/types/classwork';
 
 interface CreateQuestionsDialogProps {
   classId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreated?: () => void;
 }
 
-const questionTypeLabels: Record<QuestionType, string> = {
-  short_answer: 'Short Answer',
-  long_answer: 'Long Answer',
-  multiple_choice: 'Multiple Choice',
-  code: 'Code',
-};
-
-export function CreateQuestionsDialog({ classId, open, onOpenChange }: CreateQuestionsDialogProps) {
-  const { addQuestionSet } = useApp();
+export function CreateQuestionsDialog({ classId, open, onOpenChange, onCreated }: CreateQuestionsDialogProps) {
+  const { createQuestionSet } = useData();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [topic, setTopic] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addQuestion = (type: QuestionType = 'short_answer') => {
     const newQuestion: Question = {
@@ -116,7 +111,7 @@ export function CreateQuestionsDialog({ classId, open, onOpenChange }: CreateQue
     setQuestions(updated);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim()) {
       toast.error('Please enter a title');
       return;
@@ -151,19 +146,27 @@ export function CreateQuestionsDialog({ classId, open, onOpenChange }: CreateQue
 
     const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
 
-    addQuestionSet({
-      classId,
-      title,
-      description,
-      topic,
-      questions,
-      totalPoints,
-      dueDate,
-    });
+    setIsSubmitting(true);
+    try {
+      await createQuestionSet(
+        classId,
+        title,
+        description || undefined,
+        topic || undefined,
+        questions,
+        totalPoints,
+        dueDate
+      );
 
-    toast.success('Questions created successfully!');
-    resetForm();
-    onOpenChange(false);
+      toast.success('Questions created successfully!');
+      resetForm();
+      onOpenChange(false);
+      onCreated?.();
+    } catch (error) {
+      toast.error('Failed to create questions');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -401,8 +404,15 @@ export function CreateQuestionsDialog({ classId, open, onOpenChange }: CreateQue
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} className="gradient-primary">
-              Create Questions
+            <Button onClick={handleSubmit} className="gradient-primary" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Questions'
+              )}
             </Button>
           </div>
         </div>

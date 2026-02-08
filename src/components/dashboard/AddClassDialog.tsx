@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import {
   Dialog,
   DialogContent,
@@ -49,7 +49,7 @@ export function AddClassDialog() {
   const [selectedColor, setSelectedColor] = useState(CLASS_COLORS[0]);
   const [isCreating, setIsCreating] = useState(false);
 
-  const { joinClass, createClass } = useApp();
+  const { joinClass, createClass } = useData();
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,18 +60,21 @@ export function AddClassDialog() {
     }
 
     setIsJoining(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
     
-    const result = joinClass(streamCode.trim());
-    
-    setIsJoining(false);
-    
-    if (result.success) {
-      toast.success(result.message);
-      setStreamCode('');
-      setOpen(false);
-    } else {
-      toast.error(result.message);
+    try {
+      const result = await joinClass(streamCode.trim());
+      
+      if (result.success) {
+        toast.success(result.message);
+        setStreamCode('');
+        setOpen(false);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error('Failed to join class. Please try again.');
+    } finally {
+      setIsJoining(false);
     }
   };
 
@@ -84,28 +87,23 @@ export function AddClassDialog() {
     }
 
     setIsCreating(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
     
-    const result = createClass({
-      name: className.trim(),
-      section: section.trim() || undefined,
-      subject: subject.trim() || undefined,
-      room: room.trim() || undefined,
-      coverColor: selectedColor,
-    });
-    
-    setIsCreating(false);
-    
-    if (result.success) {
-      toast.success(result.message);
-      setClassName('');
-      setSection('');
-      setSubject('');
-      setRoom('');
-      setSelectedColor(CLASS_COLORS[0]);
+    try {
+      const classData = await createClass(
+        className.trim(),
+        section.trim() || undefined,
+        subject.trim() || undefined,
+        room.trim() || undefined,
+        selectedColor
+      );
+      
+      toast.success(`Class "${classData.name}" created! Stream code: ${classData.streamCode}`);
+      resetForm();
       setOpen(false);
-    } else {
-      toast.error(result.message);
+    } catch (error) {
+      toast.error('Failed to create class. Please try again.');
+    } finally {
+      setIsCreating(false);
     }
   };
 

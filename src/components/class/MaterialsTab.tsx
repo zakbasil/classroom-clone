@@ -1,16 +1,37 @@
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, FolderOpen, FileText, Link as LinkIcon, Download } from 'lucide-react';
+import { Plus, FolderOpen, FileText, Link as LinkIcon, Download, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreateMaterialDialog } from './CreateMaterialDialog';
+import type { Material } from '@/contexts/DataContext';
 
 interface MaterialsTabProps {
   classId: string;
 }
 
 export function MaterialsTab({ classId }: MaterialsTabProps) {
-  const { getMaterialsByClass, isCreatorOfClass } = useApp();
-  const materials = getMaterialsByClass(classId);
+  const { getMaterialsByClass, isCreatorOfClass } = useData();
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const isCreator = isCreatorOfClass(classId);
+
+  useEffect(() => {
+    loadMaterials();
+  }, [classId]);
+
+  const loadMaterials = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getMaterialsByClass(classId);
+      setMaterials(data);
+    } catch (error) {
+      console.error('Error loading materials:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Group materials by topic
   const groupedMaterials = materials.reduce((acc, material) => {
@@ -34,12 +55,23 @@ export function MaterialsTab({ classId }: MaterialsTabProps) {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto py-12 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
       {/* Add Material Button (Creator only) */}
       {isCreator && (
         <div className="mb-6">
-          <Button className="rounded-xl gradient-primary shadow-soft">
+          <Button 
+            className="rounded-xl gradient-primary shadow-soft"
+            onClick={() => setDialogOpen(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Material
           </Button>
@@ -107,6 +139,13 @@ export function MaterialsTab({ classId }: MaterialsTabProps) {
           ))}
         </div>
       )}
+
+      <CreateMaterialDialog 
+        classId={classId} 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen}
+        onCreated={loadMaterials}
+      />
     </div>
   );
 }

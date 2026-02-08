@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical, Clock } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Question } from '@/types/classwork';
 
@@ -20,10 +20,11 @@ interface CreateQuizDialogProps {
   classId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreated?: () => void;
 }
 
-export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDialogProps) {
-  const { addQuiz } = useApp();
+export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: CreateQuizDialogProps) {
+  const { createQuiz } = useData();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [topic, setTopic] = useState('');
@@ -32,6 +33,7 @@ export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDial
   const [timeLimit, setTimeLimit] = useState<number | ''>('');
   const [requireFullscreen, setRequireFullscreen] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addQuestion = () => {
     const newQuestion: Question = {
@@ -91,7 +93,7 @@ export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDial
     setQuestions(updated);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim()) {
       toast.error('Please enter a quiz title');
       return;
@@ -123,23 +125,36 @@ export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDial
     }
 
     const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+    
+    // Combine date and time
+    let fullDueDate = dueDate;
+    if (dueTime) {
+      fullDueDate = `${dueDate}T${dueTime}:00`;
+    }
 
-    addQuiz({
-      classId,
-      title,
-      description,
-      topic,
-      questions,
-      totalPoints,
-      dueDate,
-      dueTime,
-      requireFullscreen,
-      timeLimit: timeLimit ? Number(timeLimit) : undefined,
-    });
+    setIsSubmitting(true);
+    try {
+      await createQuiz(
+        classId,
+        title,
+        description || undefined,
+        topic || undefined,
+        questions,
+        totalPoints,
+        fullDueDate,
+        requireFullscreen,
+        timeLimit ? Number(timeLimit) : undefined
+      );
 
-    toast.success('Quiz created successfully!');
-    resetForm();
-    onOpenChange(false);
+      toast.success('Quiz created successfully!');
+      resetForm();
+      onOpenChange(false);
+      onCreated?.();
+    } catch (error) {
+      toast.error('Failed to create quiz');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -349,8 +364,15 @@ export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDial
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} className="gradient-primary">
-              Create Quiz
+            <Button onClick={handleSubmit} className="gradient-primary" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Quiz'
+              )}
             </Button>
           </div>
         </div>

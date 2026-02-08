@@ -1,12 +1,21 @@
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ClassCard } from '@/components/dashboard/ClassCard';
 import { AddClassDialog } from '@/components/dashboard/AddClassDialog';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { getUserClasses } = useApp();
-  const userClasses = getUserClasses();
+  const { classes, isLoading } = useData();
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -23,7 +32,7 @@ export default function Dashboard() {
         </div>
 
         {/* Class Grid */}
-        {userClasses.length === 0 ? (
+        {classes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4">
               <Plus className="w-10 h-10 text-muted-foreground" />
@@ -38,7 +47,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {userClasses.map((classItem, index) => (
+            {classes.map((classItem, index) => (
               <ClassCard 
                 key={classItem.id} 
                 classData={classItem}

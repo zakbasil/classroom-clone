@@ -1,25 +1,71 @@
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MoreVertical, Paperclip, Send } from 'lucide-react';
+import { MoreVertical, Paperclip, Send, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import type { Announcement } from '@/contexts/DataContext';
 
 interface StreamTabProps {
   classId: string;
 }
 
 export function StreamTab({ classId }: StreamTabProps) {
-  const { getAnnouncementsByClass, currentUser, isCreatorOfClass } = useApp();
-  const announcements = getAnnouncementsByClass(classId);
+  const { getAnnouncementsByClass, createAnnouncement, isCreatorOfClass } = useData();
+  const { profile } = useAuth();
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [newAnnouncement, setNewAnnouncement] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
   const isCreator = isCreatorOfClass(classId);
+
+  useEffect(() => {
+    loadAnnouncements();
+  }, [classId]);
+
+  const loadAnnouncements = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getAnnouncementsByClass(classId);
+      setAnnouncements(data);
+    } catch (error) {
+      console.error('Error loading announcements:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePost = async () => {
+    if (!newAnnouncement.trim()) return;
+    
+    setIsPosting(true);
+    try {
+      const announcement = await createAnnouncement(classId, newAnnouncement.trim());
+      setAnnouncements(prev => [announcement, ...prev]);
+      setNewAnnouncement('');
+      toast.success('Announcement posted!');
+    } catch (error) {
+      toast.error('Failed to post announcement');
+    } finally {
+      setIsPosting(false);
+    }
+  };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto py-12 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
@@ -30,7 +76,7 @@ export function StreamTab({ classId }: StreamTabProps) {
             <div className="flex gap-3">
               <Avatar className="w-10 h-10">
                 <AvatarFallback className="bg-primary/10 text-primary">
-                  {getInitials(currentUser.name)}
+                  {profile ? getInitials(profile.name) : 'U'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -48,9 +94,14 @@ export function StreamTab({ classId }: StreamTabProps) {
                   <Button 
                     size="sm" 
                     className="rounded-xl gradient-primary"
-                    disabled={!newAnnouncement.trim()}
+                    disabled={!newAnnouncement.trim() || isPosting}
+                    onClick={handlePost}
                   >
-                    <Send className="w-4 h-4 mr-2" />
+                    {isPosting ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
                     Post
                   </Button>
                 </div>
@@ -110,35 +161,11 @@ export function StreamTab({ classId }: StreamTabProps) {
                   </div>
                 )}
 
-                {/* Comments */}
-                {announcement.comments && announcement.comments.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border space-y-3">
-                    {announcement.comments.map((comment) => (
-                      <div key={comment.id} className="flex gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                            {getInitials(comment.authorName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-baseline gap-2">
-                            <span className="font-medium text-sm">{comment.authorName}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                            </span>
-                          </div>
-                          <p className="text-sm text-foreground mt-0.5">{comment.content}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 {/* Add Comment */}
                 <div className="mt-4 pt-3 border-t border-border flex gap-3">
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                      {getInitials(currentUser.name)}
+                      {profile ? getInitials(profile.name) : 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <input

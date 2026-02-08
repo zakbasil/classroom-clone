@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useData } from '@/contexts/DataContext';
 import {
   Dialog,
   DialogContent,
@@ -10,36 +10,41 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CreateMaterialDialogProps {
   classId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCreated?: () => void;
 }
 
-export function CreateMaterialDialog({ classId, open, onOpenChange }: CreateMaterialDialogProps) {
-  const { addMaterial } = useApp();
+export function CreateMaterialDialog({ classId, open, onOpenChange, onCreated }: CreateMaterialDialogProps) {
+  const { createMaterial } = useData();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [topic, setTopic] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!title.trim()) {
       toast.error('Please enter a title');
       return;
     }
 
-    addMaterial({
-      classId,
-      title,
-      description,
-      topic,
-    });
-
-    toast.success('Material added successfully!');
-    resetForm();
-    onOpenChange(false);
+    setIsSubmitting(true);
+    try {
+      await createMaterial(classId, title, description || undefined, topic || undefined);
+      toast.success('Material added successfully!');
+      resetForm();
+      onOpenChange(false);
+      onCreated?.();
+    } catch (error) {
+      toast.error('Failed to add material');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -88,8 +93,15 @@ export function CreateMaterialDialog({ classId, open, onOpenChange }: CreateMate
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} className="gradient-primary">
-              Add Material
+            <Button onClick={handleSubmit} className="gradient-primary" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Material'
+              )}
             </Button>
           </div>
         </div>

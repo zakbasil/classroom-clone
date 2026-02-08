@@ -3,7 +3,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { GraduationCap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 interface AppLayoutProps {
@@ -11,7 +11,7 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { currentUser } = useApp();
+  const { profile } = useAuth();
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -36,15 +36,19 @@ export function AppLayout({ children }: AppLayoutProps) {
             
             {/* User Avatar */}
             <div className="flex items-center gap-3">
-              <div className="hidden sm:block text-right">
-                <p className="text-sm font-medium text-foreground">{currentUser.name}</p>
-                <p className="text-xs text-muted-foreground">{currentUser.email}</p>
-              </div>
-              <Avatar className="w-9 h-9">
-                <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                  {getInitials(currentUser.name)}
-                </AvatarFallback>
-              </Avatar>
+              {profile && (
+                <>
+                  <div className="hidden sm:block text-right">
+                    <p className="text-sm font-medium text-foreground">{profile.name}</p>
+                    <p className="text-xs text-muted-foreground">{profile.email}</p>
+                  </div>
+                  <Avatar className="w-9 h-9">
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                      {getInitials(profile.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </>
+              )}
             </div>
           </header>
 

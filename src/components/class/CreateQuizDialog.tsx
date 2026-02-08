@@ -12,9 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Question, QuestionOption } from '@/types/classwork';
+import type { Question } from '@/types/classwork';
 
 interface CreateQuizDialogProps {
   classId: string;
@@ -28,6 +28,8 @@ export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDial
   const [description, setDescription] = useState('');
   const [topic, setTopic] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
+  const [timeLimit, setTimeLimit] = useState<number | ''>('');
   const [requireFullscreen, setRequireFullscreen] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
 
@@ -130,7 +132,9 @@ export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDial
       questions,
       totalPoints,
       dueDate,
+      dueTime,
       requireFullscreen,
+      timeLimit: timeLimit ? Number(timeLimit) : undefined,
     });
 
     toast.success('Quiz created successfully!');
@@ -143,6 +147,8 @@ export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDial
     setDescription('');
     setTopic('');
     setDueDate('');
+    setDueTime('');
+    setTimeLimit('');
     setRequireFullscreen(false);
     setQuestions([]);
   };
@@ -186,12 +192,39 @@ export function CreateQuizDialog({ classId, open, onOpenChange }: CreateQuizDial
                 />
               </div>
               <div>
-                <Label htmlFor="dueDate">Due Date</Label>
+                <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="timeLimit"
+                    type="number"
+                    value={timeLimit}
+                    onChange={(e) => setTimeLimit(e.target.value ? parseInt(e.target.value) : '')}
+                    placeholder="e.g., 30"
+                    className="pl-10"
+                    min={1}
+                    max={300}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="dueDate">Deadline Date</Label>
                 <Input
                   id="dueDate"
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="dueTime">Deadline Time (optional)</Label>
+                <Input
+                  id="dueTime"
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
                 />
               </div>
             </div>

@@ -9,9 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Clock, Maximize, AlertTriangle, FileText, Trophy } from 'lucide-react';
+import { ArrowLeft, Clock, Maximize, AlertTriangle, FileText, Trophy, Timer, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { SubmissionsLeaderboard } from '@/components/class/SubmissionsLeaderboard';
+import { QuizTimer, useQuizDeadline } from '@/components/class/QuizTimer';
+import { format } from 'date-fns';
 import type { QuizAttempt } from '@/types/classwork';
 
 const CACHE_KEY_PREFIX = 'quiz_attempt_';
@@ -31,6 +33,11 @@ export default function QuizPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [timerStartedAt, setTimerStartedAt] = useState<string | null>(null);
+  const [isTimerExpired, setIsTimerExpired] = useState(false);
+
+  // Check if deadline has passed
+  const isPastDeadline = useQuizDeadline(quiz?.dueDate || new Date().toISOString());
 
   // Load cached attempt
   useEffect(() => {
@@ -42,6 +49,17 @@ export default function QuizPage() {
           if (!attempt.submittedAt) {
             setAnswers(attempt.answers);
             setHasStarted(true);
+            if (attempt.timerStartedAt) {
+              setTimerStartedAt(attempt.timerStartedAt);
+              // Check if timer already expired
+              if (quiz?.timeLimit) {
+                const startTime = new Date(attempt.timerStartedAt).getTime();
+                const endTime = startTime + quiz.timeLimit * 60 * 1000;
+                if (Date.now() > endTime) {
+                  setIsTimerExpired(true);
+                }
+              }
+            }
           } else {
             setIsSubmitted(true);
             setAnswers(attempt.answers);
@@ -51,19 +69,20 @@ export default function QuizPage() {
         }
       }
     }
-  }, [quizId, isCreator]);
+  }, [quizId, isCreator, quiz?.timeLimit]);
 
   // Save to cache whenever answers change
   useEffect(() => {
-    if (quizId && hasStarted && !isSubmitted && !isCreator) {
+    if (quizId && hasStarted && !isSubmitted && !isCreator && !isTimerExpired && !isPastDeadline) {
       const attempt: QuizAttempt = {
         quizId,
         answers,
         startedAt: new Date().toISOString(),
+        timerStartedAt: timerStartedAt || undefined,
       };
       localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
     }
-  }, [quizId, answers, hasStarted, isSubmitted, isCreator]);
+  }, [quizId, answers, hasStarted, isSubmitted, isCreator, timerStartedAt, isTimerExpired, isPastDeadline]);
 
   // Fullscreen handling
   const enterFullscreen = useCallback(async () => {
@@ -94,21 +113,45 @@ export default function QuizPage() {
     if (quiz?.requireFullscreen) {
       await enterFullscreen();
     }
+    const now = new Date().toISOString();
     setHasStarted(true);
+    setTimerStartedAt(now);
+    
     const attempt: QuizAttempt = {
       quizId: quizId!,
       answers: {},
-      startedAt: new Date().toISOString(),
+      startedAt: now,
+      timerStartedAt: now,
     };
     localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
   };
 
   const handleAnswerChange = (questionId: string, answer: string) => {
+    if (isTimerExpired || isPastDeadline || isSubmitted) return;
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
+  const handleTimerExpire = useCallback(() => {
+    setIsTimerExpired(true);
+    exitFullscreen();
+    toast.error('Time is up! Your quiz has been automatically saved.');
+    
+    // Auto-submit current answers
+    if (quizId) {
+      const attempt: QuizAttempt = {
+        quizId,
+        answers,
+        startedAt: timerStartedAt || new Date().toISOString(),
+        submittedAt: new Date().toISOString(),
+        timerStartedAt: timerStartedAt || undefined,
+      };
+      localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
+      submitQuizAttempt(quizId, answers);
+    }
+  }, [quizId, answers, timerStartedAt, exitFullscreen, submitQuizAttempt]);
+
   const handleSubmit = () => {
-    if (!quiz) return;
+    if (!quiz || isTimerExpired || isPastDeadline) return;
 
     // Check for unanswered questions
     const unanswered = quiz.questions.filter(q => !answers[q.id]);
@@ -121,8 +164,9 @@ export default function QuizPage() {
     const attempt: QuizAttempt = {
       quizId: quizId!,
       answers,
-      startedAt: new Date().toISOString(),
+      startedAt: timerStartedAt || new Date().toISOString(),
       submittedAt: new Date().toISOString(),
+      timerStartedAt: timerStartedAt || undefined,
     };
     localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
     
@@ -132,6 +176,22 @@ export default function QuizPage() {
     setIsSubmitted(true);
     exitFullscreen();
     toast.success('Quiz submitted successfully!');
+  };
+
+  // Calculate score for results view
+  const calculateScore = () => {
+    if (!quiz) return { score: 0, total: 0, percentage: 0 };
+    let score = 0;
+    quiz.questions.forEach(q => {
+      if (answers[q.id] === q.correctOptionId) {
+        score += q.points;
+      }
+    });
+    return {
+      score,
+      total: quiz.totalPoints,
+      percentage: Math.round((score / quiz.totalPoints) * 100),
+    };
   };
 
   if (!quiz || !classData) {
@@ -147,7 +207,7 @@ export default function QuizPage() {
   const answeredCount = Object.keys(answers).length;
   const progress = (answeredCount / quiz.questions.length) * 100;
 
-  // Creator view
+  // Creator view with tabs
   if (isCreator) {
     return (
       <AppLayout>
@@ -166,10 +226,19 @@ export default function QuizPage() {
             {quiz.description && (
               <p className="text-muted-foreground mb-4">{quiz.description}</p>
             )}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span>{quiz.totalPoints} points</span>
               <span>•</span>
               <span>{quiz.questions.length} questions</span>
+              {quiz.timeLimit && (
+                <>
+                  <span>•</span>
+                  <Badge variant="outline" className="text-xs">
+                    <Timer className="w-3 h-3 mr-1" />
+                    {quiz.timeLimit} min timer
+                  </Badge>
+                </>
+              )}
               {quiz.requireFullscreen && (
                 <>
                   <span>•</span>
@@ -179,6 +248,8 @@ export default function QuizPage() {
                   </Badge>
                 </>
               )}
+              <span>•</span>
+              <span>Due: {format(new Date(quiz.dueDate), 'MMM d, yyyy h:mm a')}</span>
             </div>
           </div>
 
@@ -242,8 +313,143 @@ export default function QuizPage() {
     );
   }
 
+  // Deadline passed view (before starting)
+  if (isPastDeadline && !hasStarted && !isSubmitted) {
+    return (
+      <AppLayout>
+        <div className="max-w-xl mx-auto py-12 px-4">
+          <Card className="shadow-card rounded-2xl">
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+                <XCircle className="w-8 h-8 text-destructive" />
+              </div>
+              <h1 className="text-2xl font-bold mb-2">Quiz Deadline Passed</h1>
+              <p className="text-muted-foreground mb-6">
+                The deadline for this quiz was {format(new Date(quiz.dueDate), 'MMM d, yyyy h:mm a')}. 
+                You can no longer take this quiz.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/class/${classId}/classwork`)}
+              >
+                Back to Classwork
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Timer expired or submitted - Results view
+  if (isTimerExpired || isSubmitted || (isPastDeadline && hasStarted)) {
+    const { score, total, percentage } = calculateScore();
+    
+    return (
+      <AppLayout>
+        <div className="max-w-3xl mx-auto py-6 px-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(`/class/${classId}/classwork`)}
+            className="mb-6"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Classwork
+          </Button>
+
+          <Card className="shadow-card rounded-2xl mb-6">
+            <CardContent className="p-8 text-center">
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                percentage >= 70 ? 'bg-primary/10' : 'bg-secondary/10'
+              }`}>
+                {isTimerExpired ? (
+                  <Clock className="w-10 h-10 text-secondary" />
+                ) : (
+                  <CheckCircle className={`w-10 h-10 ${percentage >= 70 ? 'text-primary' : 'text-secondary'}`} />
+                )}
+              </div>
+              <h1 className="text-2xl font-bold mb-2">
+                {isTimerExpired ? 'Time Expired' : 'Quiz Completed!'}
+              </h1>
+              <p className="text-muted-foreground mb-4">
+                {isTimerExpired 
+                  ? 'Your time ran out. Here are your results based on what you answered.'
+                  : 'Your answers have been recorded. Here are your results.'}
+              </p>
+              <div className="text-4xl font-bold mb-2">
+                <span className={percentage >= 70 ? 'text-primary' : 'text-secondary'}>{score}</span>
+                <span className="text-muted-foreground">/{total}</span>
+              </div>
+              <p className="text-lg text-muted-foreground">{percentage}%</p>
+            </CardContent>
+          </Card>
+
+          {/* Show answers and results */}
+          <h2 className="text-lg font-semibold mb-4">Your Answers</h2>
+          <div className="space-y-4">
+            {quiz.questions.map((question, index) => {
+              const userAnswer = answers[question.id];
+              const isCorrect = userAnswer === question.correctOptionId;
+              
+              return (
+                <Card key={question.id} className="shadow-card rounded-2xl">
+                  <CardContent className="p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Question {index + 1}</span>
+                        {isCorrect ? (
+                          <Badge variant="default" className="bg-primary">Correct</Badge>
+                        ) : (
+                          <Badge variant="destructive">Incorrect</Badge>
+                        )}
+                      </div>
+                      <Badge variant="secondary">{question.points} pts</Badge>
+                    </div>
+                    <p className="font-medium mb-4">{question.text}</p>
+
+                    <div className="space-y-2">
+                      {question.options?.map((option) => {
+                        const isUserAnswer = option.id === userAnswer;
+                        const isCorrectOption = option.id === question.correctOptionId;
+                        
+                        return (
+                          <div
+                            key={option.id}
+                            className={`p-3 rounded-lg border ${
+                              isCorrectOption
+                                ? 'bg-primary/10 border-primary'
+                                : isUserAnswer && !isCorrectOption
+                                ? 'bg-destructive/10 border-destructive'
+                                : 'bg-muted/30 border-border'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span>{option.text}</span>
+                              <div className="flex items-center gap-2">
+                                {isUserAnswer && (
+                                  <Badge variant="outline" className="text-xs">Your answer</Badge>
+                                )}
+                                {isCorrectOption && (
+                                  <CheckCircle className="w-4 h-4 text-primary" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   // Start screen for students
-  if (!hasStarted && !isSubmitted) {
+  if (!hasStarted) {
     return (
       <AppLayout>
         <div className="max-w-xl mx-auto py-12 px-4">
@@ -253,20 +459,43 @@ export default function QuizPage() {
               {quiz.description && (
                 <p className="text-muted-foreground mb-6">{quiz.description}</p>
               )}
-              <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mb-6">
+              <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground mb-6">
                 <span>{quiz.totalPoints} points</span>
                 <span>•</span>
                 <span>{quiz.questions.length} questions</span>
+                {quiz.timeLimit && (
+                  <>
+                    <span>•</span>
+                    <Badge variant="outline">
+                      <Timer className="w-3 h-3 mr-1" />
+                      {quiz.timeLimit} min
+                    </Badge>
+                  </>
+                )}
               </div>
 
+              {quiz.timeLimit && (
+                <div className="bg-secondary/10 p-4 rounded-xl mb-4 flex items-center gap-3">
+                  <Timer className="w-5 h-5 text-secondary" />
+                  <p className="text-sm text-left">
+                    You will have <strong>{quiz.timeLimit} minutes</strong> to complete this quiz once you start.
+                    The timer cannot be paused.
+                  </p>
+                </div>
+              )}
+
               {quiz.requireFullscreen && (
-                <div className="bg-muted/50 p-4 rounded-xl mb-6 flex items-center gap-3">
+                <div className="bg-muted/50 p-4 rounded-xl mb-4 flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 text-secondary" />
                   <p className="text-sm text-left">
                     This quiz requires fullscreen mode. You must stay in fullscreen until you submit.
                   </p>
                 </div>
               )}
+
+              <p className="text-xs text-muted-foreground mb-6">
+                Deadline: {format(new Date(quiz.dueDate), 'MMM d, yyyy h:mm a')}
+              </p>
 
               <Button onClick={handleStartQuiz} className="gradient-primary w-full">
                 {quiz.requireFullscreen ? (
@@ -285,59 +514,38 @@ export default function QuizPage() {
     );
   }
 
-  // Submitted screen
-  if (isSubmitted) {
-    return (
-      <AppLayout>
-        <div className="max-w-xl mx-auto py-12 px-4">
-          <Card className="shadow-card rounded-2xl">
-            <CardContent className="p-8 text-center">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-primary" />
-              </div>
-              <h1 className="text-2xl font-bold mb-2">Quiz Submitted!</h1>
-              <p className="text-muted-foreground mb-6">
-                Your answers have been recorded. Your teacher will review and grade your submission.
-              </p>
-              <Button
-                variant="outline"
-                onClick={() => navigate(`/class/${classId}/classwork`)}
-              >
-                Back to Classwork
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </AppLayout>
-    );
-  }
-
   // Quiz taking interface
   return (
     <div className={`min-h-screen bg-background ${isFullscreen ? 'p-6' : ''}`}>
       {!isFullscreen && (
         <AppLayout>
           <div className="max-w-3xl mx-auto py-6 px-4">
-            <QuizContent
+            <QuizContentWithTimer
               quiz={quiz}
               answers={answers}
               onAnswerChange={handleAnswerChange}
               onSubmit={handleSubmit}
               progress={progress}
               answeredCount={answeredCount}
+              timeLimit={quiz.timeLimit}
+              timerStartedAt={timerStartedAt}
+              onTimerExpire={handleTimerExpire}
             />
           </div>
         </AppLayout>
       )}
       {isFullscreen && (
         <div className="max-w-3xl mx-auto">
-          <QuizContent
+          <QuizContentWithTimer
             quiz={quiz}
             answers={answers}
             onAnswerChange={handleAnswerChange}
             onSubmit={handleSubmit}
             progress={progress}
             answeredCount={answeredCount}
+            timeLimit={quiz.timeLimit}
+            timerStartedAt={timerStartedAt}
+            onTimerExpire={handleTimerExpire}
           />
         </div>
       )}
@@ -361,18 +569,40 @@ interface QuizContentProps {
   onSubmit: () => void;
   progress: number;
   answeredCount: number;
+  timeLimit?: number;
+  timerStartedAt: string | null;
+  onTimerExpire: () => void;
 }
 
-function QuizContent({ quiz, answers, onAnswerChange, onSubmit, progress, answeredCount }: QuizContentProps) {
+function QuizContentWithTimer({ 
+  quiz, 
+  answers, 
+  onAnswerChange, 
+  onSubmit, 
+  progress, 
+  answeredCount,
+  timeLimit,
+  timerStartedAt,
+  onTimerExpire
+}: QuizContentProps) {
   return (
     <>
-      {/* Progress Header */}
+      {/* Progress Header with Timer */}
       <div className="sticky top-0 bg-background/95 backdrop-blur py-4 z-10 border-b mb-6">
         <div className="flex items-center justify-between mb-2">
           <h1 className="font-semibold">{quiz.title}</h1>
-          <span className="text-sm text-muted-foreground">
-            {answeredCount} of {quiz.questions.length} answered
-          </span>
+          <div className="flex items-center gap-4">
+            {timeLimit && timerStartedAt && (
+              <QuizTimer 
+                timeLimit={timeLimit}
+                startedAt={timerStartedAt}
+                onExpire={onTimerExpire}
+              />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {answeredCount} of {quiz.questions.length}
+            </span>
+          </div>
         </div>
         <Progress value={progress} className="h-2" />
       </div>

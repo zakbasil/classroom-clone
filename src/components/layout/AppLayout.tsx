@@ -1,17 +1,39 @@
 import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
-import { GraduationCap } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { GraduationCap, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { SessionTimeoutDialog } from '@/components/auth/SessionTimeoutDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const { showWarning, countdown, stayLoggedIn } = useSessionTimeout({
+    inactivityTimeout: 10 * 60 * 1000, // 10 minutes
+    warningTimeout: 2 * 60 * 1000, // 2 minutes
+    onTimeout: handleLogout,
+  });
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -34,20 +56,35 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Link>
             </div>
             
-            {/* User Avatar */}
+            {/* User Menu */}
             <div className="flex items-center gap-3">
               {profile && (
-                <>
-                  <div className="hidden sm:block text-right">
-                    <p className="text-sm font-medium text-foreground">{profile.name}</p>
-                    <p className="text-xs text-muted-foreground">{profile.email}</p>
-                  </div>
-                  <Avatar className="w-9 h-9">
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                      {getInitials(profile.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-3 h-auto py-2 px-3">
+                      <div className="hidden sm:block text-right">
+                        <p className="text-sm font-medium text-foreground">{profile.name}</p>
+                        <p className="text-xs text-muted-foreground">{profile.email}</p>
+                      </div>
+                      <Avatar className="w-9 h-9">
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          {getInitials(profile.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="px-2 py-1.5 sm:hidden">
+                      <p className="text-sm font-medium">{profile.name}</p>
+                      <p className="text-xs text-muted-foreground">{profile.email}</p>
+                    </div>
+                    <DropdownMenuSeparator className="sm:hidden" />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </header>
@@ -58,6 +95,13 @@ export function AppLayout({ children }: AppLayoutProps) {
           </main>
         </div>
       </div>
+
+      {/* Session Timeout Dialog */}
+      <SessionTimeoutDialog
+        open={showWarning}
+        countdown={countdown}
+        onStayLoggedIn={stayLoggedIn}
+      />
     </SidebarProvider>
   );
 }

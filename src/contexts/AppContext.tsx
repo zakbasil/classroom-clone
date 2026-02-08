@@ -103,7 +103,9 @@ interface CreateQuizInput {
   questions: Question[];
   totalPoints: number;
   dueDate: string;
+  dueTime?: string; // Time component of deadline
   requireFullscreen: boolean;
+  timeLimit?: number; // Timer in minutes
 }
 
 interface CreateQuestionSetInput {
@@ -297,6 +299,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const addQuiz = (input: CreateQuizInput) => {
+    // Combine date and time for full deadline
+    let fullDeadline = input.dueDate;
+    if (input.dueTime) {
+      fullDeadline = `${input.dueDate}T${input.dueTime}:00`;
+    }
+
     const quiz: Quiz = {
       id: `quiz-${Date.now()}`,
       classId: input.classId,
@@ -305,9 +313,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       topic: input.topic,
       questions: input.questions,
       totalPoints: input.totalPoints,
-      dueDate: input.dueDate,
+      dueDate: fullDeadline,
       createdAt: new Date().toISOString().split('T')[0],
       requireFullscreen: input.requireFullscreen,
+      timeLimit: input.timeLimit,
     };
     setQuizzes(prev => [...prev, quiz]);
 

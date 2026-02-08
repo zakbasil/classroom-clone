@@ -47,6 +47,7 @@ export interface QuizAttempt {
   answers: Record<string, string>; // questionId -> answer
   startedAt: string;
   submittedAt?: string;
+  timerStartedAt?: string; // When the timer started for this attempt
 }
 
 export interface QuestionAnswer {

@@ -12,9 +12,10 @@ interface StreamTabProps {
 }
 
 export function StreamTab({ classId }: StreamTabProps) {
-  const { currentRole, getAnnouncementsByClass, currentUser } = useApp();
+  const { getAnnouncementsByClass, currentUser, isCreatorOfClass } = useApp();
   const announcements = getAnnouncementsByClass(classId);
   const [newAnnouncement, setNewAnnouncement] = useState('');
+  const isCreator = isCreatorOfClass(classId);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -22,8 +23,8 @@ export function StreamTab({ classId }: StreamTabProps) {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      {/* Compose Announcement (Teacher only) */}
-      {currentRole === 'teacher' && (
+      {/* Compose Announcement (Creator only) */}
+      {isCreator && (
         <Card className="mb-6 shadow-card rounded-2xl overflow-hidden">
           <CardContent className="p-4">
             <div className="flex gap-3">

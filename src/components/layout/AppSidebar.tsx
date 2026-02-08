@@ -34,7 +34,8 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
-  const { classes } = useApp();
+  const { getUserClasses } = useApp();
+  const userClasses = getUserClasses();
 
   const isActive = (path: string) => location.pathname === path;
   const isClassActive = (classId: string) => location.pathname.startsWith(`/class/${classId}`);
@@ -82,7 +83,7 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="mt-2">
-                {classes.map((classItem) => (
+                {userClasses.map((classItem) => (
                   <SidebarMenuItem key={classItem.id}>
                     <SidebarMenuButton asChild>
                       <NavLink

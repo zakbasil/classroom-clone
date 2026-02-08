@@ -1,4 +1,4 @@
-import type { ClassData, Assignment, Announcement, Student, Submission, Material } from '@/contexts/AppContext';
+import type { ClassData, Assignment, Announcement, Student, Submission, Material, Enrollment } from '@/contexts/AppContext';
 
 export const mockClasses: ClassData[] = [
   {
@@ -7,8 +7,8 @@ export const mockClasses: ClassData[] = [
     section: 'Period 1',
     subject: 'Mathematics',
     room: 'Room 204',
-    teacherId: 'teacher-1',
-    teacherName: 'Sarah Johnson',
+    creatorId: 'user-1',
+    creatorName: 'Alex Johnson',
     coverColor: 'class-blue',
     streamCode: 'MATH2026',
     studentCount: 28,
@@ -20,8 +20,8 @@ export const mockClasses: ClassData[] = [
     section: 'Period 3',
     subject: 'English',
     room: 'Room 112',
-    teacherId: 'teacher-1',
-    teacherName: 'Sarah Johnson',
+    creatorId: 'user-2',
+    creatorName: 'Sarah Johnson',
     coverColor: 'class-purple',
     streamCode: 'ENGL2026',
     studentCount: 24,
@@ -33,8 +33,8 @@ export const mockClasses: ClassData[] = [
     section: 'Period 4',
     subject: 'History',
     room: 'Room 305',
-    teacherId: 'teacher-1',
-    teacherName: 'Sarah Johnson',
+    creatorId: 'user-2',
+    creatorName: 'Sarah Johnson',
     coverColor: 'class-green',
     streamCode: 'HIST2026',
     studentCount: 26,
@@ -46,8 +46,8 @@ export const mockClasses: ClassData[] = [
     section: 'Period 6',
     subject: 'Science',
     room: 'Lab 2',
-    teacherId: 'teacher-1',
-    teacherName: 'Sarah Johnson',
+    creatorId: 'user-2',
+    creatorName: 'Sarah Johnson',
     coverColor: 'class-orange',
     streamCode: 'PHYS2026',
     studentCount: 22,
@@ -59,8 +59,8 @@ export const mockClasses: ClassData[] = [
     section: 'Period 7',
     subject: 'English',
     room: 'Room 118',
-    teacherId: 'teacher-1',
-    teacherName: 'Sarah Johnson',
+    creatorId: 'user-2',
+    creatorName: 'Sarah Johnson',
     coverColor: 'class-teal',
     streamCode: 'WRIT2026',
     studentCount: 18,
@@ -68,10 +68,10 @@ export const mockClasses: ClassData[] = [
   },
 ];
 
-// Initial enrollments for the student user
-export const mockEnrollments: { id: string; studentId: string; classId: string }[] = [
-  { id: 'enroll-1', studentId: 'student-1', classId: 'class-1' },
-  { id: 'enroll-2', studentId: 'student-1', classId: 'class-3' },
+// Initial enrollments for the current user
+export const mockEnrollments: Enrollment[] = [
+  { id: 'enroll-1', userId: 'user-1', classId: 'class-2' },
+  { id: 'enroll-2', userId: 'user-1', classId: 'class-3' },
 ];
 
 export const mockAssignments: Assignment[] = [

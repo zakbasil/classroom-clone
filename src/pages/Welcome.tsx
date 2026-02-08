@@ -1,10 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useApp } from '@/contexts/AppContext';
 import { 
   GraduationCap, 
-  Users, 
   BookOpen, 
   ClipboardCheck, 
   BarChart3, 
@@ -37,12 +35,6 @@ const features = [
 
 export default function Welcome() {
   const navigate = useNavigate();
-  const { setCurrentRole } = useApp();
-
-  const handleExplore = (role: 'teacher' | 'student') => {
-    setCurrentRole(role);
-    navigate('/dashboard');
-  };
 
   return (
     <div className="min-h-screen gradient-hero">
@@ -68,32 +60,20 @@ export default function Welcome() {
               </span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-              A collaborative platform that helps teachers and students connect, 
+              A collaborative platform that helps everyone connect, 
               organize coursework, and achieve more together.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                onClick={() => handleExplore('teacher')}
-                className="h-14 px-8 text-base font-medium gradient-primary hover:opacity-90 transition-opacity shadow-soft rounded-2xl"
-              >
-                <Users className="w-5 h-5 mr-2" />
-                Explore as Teacher
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => handleExplore('student')}
-                className="h-14 px-8 text-base font-medium bg-card hover:bg-accent border-border shadow-soft rounded-2xl"
-              >
-                <GraduationCap className="w-5 h-5 mr-2" />
-                Explore as Student
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
+            {/* CTA Button */}
+            <Button
+              size="lg"
+              onClick={() => navigate('/dashboard')}
+              className="h-14 px-8 text-base font-medium gradient-primary hover:opacity-90 transition-opacity shadow-soft rounded-2xl"
+            >
+              <GraduationCap className="w-5 h-5 mr-2" />
+              Get Started
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
           </div>
 
           {/* Features Grid */}
@@ -122,8 +102,7 @@ export default function Welcome() {
           {/* Demo Note */}
           <div className="mt-16 text-center">
             <p className="text-sm text-muted-foreground">
-              This is a demo prototype with sample data. 
-              <span className="block mt-1">Switch between teacher and student views using the toggle in the header.</span>
+              This is a demo prototype with sample data.
             </p>
           </div>
         </div>

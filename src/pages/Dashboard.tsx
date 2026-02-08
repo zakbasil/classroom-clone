@@ -1,13 +1,12 @@
 import { useApp } from '@/contexts/AppContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ClassCard } from '@/components/dashboard/ClassCard';
-import { JoinClassDialog } from '@/components/dashboard/JoinClassDialog';
-import { Button } from '@/components/ui/button';
+import { AddClassDialog } from '@/components/dashboard/AddClassDialog';
 import { Plus } from 'lucide-react';
 
 export default function Dashboard() {
-  const { currentRole, getClassesForCurrentUser } = useApp();
-  const userClasses = getClassesForCurrentUser();
+  const { getUserClasses } = useApp();
+  const userClasses = getUserClasses();
 
   return (
     <AppLayout>
@@ -15,24 +14,12 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {currentRole === 'teacher' ? 'Your Classes' : 'Enrolled Classes'}
-            </h1>
+            <h1 className="text-2xl font-semibold text-foreground">Your Classes</h1>
             <p className="text-muted-foreground mt-1">
-              {currentRole === 'teacher' 
-                ? 'Manage your courses and track student progress'
-                : 'View your enrolled courses and upcoming work'
-              }
+              Manage your courses and track progress
             </p>
           </div>
-          {currentRole === 'teacher' ? (
-            <Button className="rounded-xl shadow-soft gradient-primary hover:opacity-90">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Class
-            </Button>
-          ) : (
-            <JoinClassDialog />
-          )}
+          <AddClassDialog />
         </div>
 
         {/* Class Grid */}
@@ -42,15 +29,12 @@ export default function Dashboard() {
               <Plus className="w-10 h-10 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">
-              {currentRole === 'teacher' ? 'No classes yet' : 'Not enrolled in any classes'}
+              No classes yet
             </h3>
             <p className="text-muted-foreground max-w-md mb-6">
-              {currentRole === 'teacher' 
-                ? 'Create your first class to get started teaching.'
-                : 'Join a class using the stream code provided by your teacher.'
-              }
+              Create a class or join one using a stream code.
             </p>
-            {currentRole === 'student' && <JoinClassDialog />}
+            <AddClassDialog />
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

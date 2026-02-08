@@ -49,9 +49,9 @@ export function ClassCard({ classData, style }: ClassCardProps) {
             </Button>
           </div>
           
-          {/* Teacher Name */}
+          {/* Creator Name */}
           <p className="text-sm text-white/90 mt-2 absolute bottom-4 left-4">
-            {classData.teacherName}
+            {classData.creatorName}
           </p>
         </div>
 

@@ -4,15 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, FileText, ChevronRight, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 interface ClassworkTabProps {
   classId: string;
 }
 
 export function ClassworkTab({ classId }: ClassworkTabProps) {
-  const { currentRole, getAssignmentsByClass } = useApp();
+  const { getAssignmentsByClass, isCreatorOfClass } = useApp();
   const assignments = getAssignmentsByClass(classId);
+  const isCreator = isCreatorOfClass(classId);
 
   // Group assignments by topic
   const groupedAssignments = assignments.reduce((acc, assignment) => {
@@ -27,7 +28,7 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
       case 'submitted':
         return <CheckCircle className="w-4 h-4 text-primary" />;
       case 'graded':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-primary" />;
       case 'late':
         return <AlertCircle className="w-4 h-4 text-secondary" />;
       case 'missing':
@@ -42,7 +43,7 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
       case 'submitted':
         return <Badge variant="secondary" className="bg-primary/10 text-primary">Submitted</Badge>;
       case 'graded':
-        return <Badge variant="secondary" className="bg-green-500/10 text-green-600">Graded</Badge>;
+        return <Badge variant="secondary" className="bg-primary/10 text-primary">Graded</Badge>;
       case 'late':
         return <Badge variant="secondary" className="bg-secondary/10 text-secondary">Late</Badge>;
       case 'missing':
@@ -54,8 +55,8 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      {/* Create Button (Teacher only) */}
-      {currentRole === 'teacher' && (
+      {/* Create Button (Creator only) */}
+      {isCreator && (
         <div className="mb-6">
           <Button className="rounded-xl gradient-primary shadow-soft">
             <Plus className="w-4 h-4 mr-2" />
@@ -70,7 +71,7 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
           <CardContent className="p-8 text-center">
             <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No assignments yet</p>
-            {currentRole === 'teacher' && (
+            {isCreator && (
               <p className="text-sm text-muted-foreground mt-1">
                 Click "Create" to add your first assignment
               </p>
@@ -106,8 +107,8 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          {currentRole === 'student' && getStatusBadge(assignment.status)}
-                          {currentRole === 'student' && getStatusIcon(assignment.status)}
+                          {!isCreator && getStatusBadge(assignment.status)}
+                          {!isCreator && getStatusIcon(assignment.status)}
                           <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                         </div>
                       </CardContent>

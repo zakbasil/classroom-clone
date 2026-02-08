@@ -9,9 +9,10 @@ interface PeopleTabProps {
 }
 
 export function PeopleTab({ classId }: PeopleTabProps) {
-  const { currentRole, getStudentsByClass, getClassById } = useApp();
+  const { getStudentsByClass, getClassById, isCreatorOfClass } = useApp();
   const students = getStudentsByClass(classId);
   const classData = getClassById(classId);
+  const isCreator = isCreatorOfClass(classId);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -19,22 +20,22 @@ export function PeopleTab({ classId }: PeopleTabProps) {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      {/* Teachers Section */}
+      {/* Creator Section */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Teachers</h2>
+          <h2 className="text-lg font-semibold text-foreground">Creator</h2>
         </div>
         <Card className="shadow-card rounded-2xl">
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               <Avatar className="w-12 h-12">
                 <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                  {classData ? getInitials(classData.teacherName) : 'T'}
+                  {classData ? getInitials(classData.creatorName) : 'C'}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-medium text-foreground">{classData?.teacherName}</p>
-                <p className="text-sm text-muted-foreground">Teacher</p>
+                <p className="font-medium text-foreground">{classData?.creatorName}</p>
+                <p className="text-sm text-muted-foreground">Creator</p>
               </div>
               <Button variant="ghost" size="icon" className="text-muted-foreground">
                 <Mail className="w-5 h-5" />
@@ -44,14 +45,14 @@ export function PeopleTab({ classId }: PeopleTabProps) {
         </Card>
       </div>
 
-      {/* Students Section */}
+      {/* Members Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-foreground">Students</h2>
+            <h2 className="text-lg font-semibold text-foreground">Members</h2>
             <span className="text-sm text-muted-foreground">({students.length})</span>
           </div>
-          {currentRole === 'teacher' && (
+          {isCreator && (
             <Button variant="outline" className="rounded-xl">
               <UserPlus className="w-4 h-4 mr-2" />
               Invite
@@ -63,7 +64,7 @@ export function PeopleTab({ classId }: PeopleTabProps) {
           <Card className="shadow-card rounded-2xl">
             <CardContent className="p-8 text-center">
               <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No students enrolled yet</p>
+              <p className="text-muted-foreground">No members yet</p>
             </CardContent>
           </Card>
         ) : (
@@ -83,7 +84,7 @@ export function PeopleTab({ classId }: PeopleTabProps) {
                     <p className="font-medium text-foreground truncate">{student.name}</p>
                     <p className="text-sm text-muted-foreground truncate">{student.email}</p>
                   </div>
-                  {currentRole === 'teacher' && (
+                  {isCreator && (
                     <Button variant="ghost" size="icon" className="text-muted-foreground">
                       <Mail className="w-4 h-4" />
                     </Button>

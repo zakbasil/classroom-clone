@@ -21,10 +21,10 @@ const colorClasses: Record<string, string> = {
 export default function ClassPage() {
   const { classId, tab = 'stream' } = useParams<{ classId: string; tab?: string }>();
   const navigate = useNavigate();
-  const { getClassById, isTeacherOfClass } = useApp();
+  const { getClassById, isCreatorOfClass } = useApp();
 
   const classData = classId ? getClassById(classId) : undefined;
-  const isTeacher = classId ? isTeacherOfClass(classId) : false;
+  const isCreator = classId ? isCreatorOfClass(classId) : false;
 
   if (!classData) {
     return (
@@ -55,8 +55,8 @@ export default function ClassPage() {
             )}
           </div>
           
-          {/* Stream Code for Teachers */}
-          {isTeacher && (
+          {/* Stream Code for Creators */}
+          {isCreator && (
             <div className="absolute top-4 right-4 max-w-xs">
               <StreamCodeDisplay streamCode={classData.streamCode} />
             </div>

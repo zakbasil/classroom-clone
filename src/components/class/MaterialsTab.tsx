@@ -8,8 +8,9 @@ interface MaterialsTabProps {
 }
 
 export function MaterialsTab({ classId }: MaterialsTabProps) {
-  const { currentRole, getMaterialsByClass } = useApp();
+  const { getMaterialsByClass, isCreatorOfClass } = useApp();
   const materials = getMaterialsByClass(classId);
+  const isCreator = isCreatorOfClass(classId);
 
   // Group materials by topic
   const groupedMaterials = materials.reduce((acc, material) => {
@@ -22,10 +23,10 @@ export function MaterialsTab({ classId }: MaterialsTabProps) {
   const getFileIcon = (type: string) => {
     switch (type) {
       case 'pdf':
-        return <FileText className="w-5 h-5 text-red-500" />;
+        return <FileText className="w-5 h-5 text-destructive" />;
       case 'doc':
       case 'docx':
-        return <FileText className="w-5 h-5 text-blue-500" />;
+        return <FileText className="w-5 h-5 text-primary" />;
       case 'link':
         return <LinkIcon className="w-5 h-5 text-primary" />;
       default:
@@ -35,8 +36,8 @@ export function MaterialsTab({ classId }: MaterialsTabProps) {
 
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
-      {/* Add Material Button (Teacher only) */}
-      {currentRole === 'teacher' && (
+      {/* Add Material Button (Creator only) */}
+      {isCreator && (
         <div className="mb-6">
           <Button className="rounded-xl gradient-primary shadow-soft">
             <Plus className="w-4 h-4 mr-2" />
@@ -51,7 +52,7 @@ export function MaterialsTab({ classId }: MaterialsTabProps) {
           <CardContent className="p-8 text-center">
             <FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">No materials yet</p>
-            {currentRole === 'teacher' && (
+            {isCreator && (
               <p className="text-sm text-muted-foreground mt-1">
                 Click "Add Material" to share resources with your class
               </p>

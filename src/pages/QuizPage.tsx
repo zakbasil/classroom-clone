@@ -4,14 +4,14 @@ import { useApp } from '@/contexts/AppContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Clock, Maximize, AlertTriangle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Clock, Maximize, AlertTriangle, FileText, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
+import { SubmissionsLeaderboard } from '@/components/class/SubmissionsLeaderboard';
 import type { QuizAttempt } from '@/types/classwork';
 
 const CACHE_KEY_PREFIX = 'quiz_attempt_';
@@ -19,11 +19,13 @@ const CACHE_KEY_PREFIX = 'quiz_attempt_';
 export default function QuizPage() {
   const { classId, quizId } = useParams<{ classId: string; quizId: string }>();
   const navigate = useNavigate();
-  const { getQuizById, getClassById, isCreatorOfClass } = useApp();
+  const { getQuizById, getClassById, isCreatorOfClass, getQuizSubmissions, getStudentsByClass, submitQuizAttempt } = useApp();
   
   const quiz = quizId ? getQuizById(quizId) : undefined;
   const classData = classId ? getClassById(classId) : undefined;
   const isCreator = classId ? isCreatorOfClass(classId) : false;
+  const quizSubmissions = quizId ? getQuizSubmissions(quizId) : [];
+  const students = classId ? getStudentsByClass(classId) : [];
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -124,6 +126,9 @@ export default function QuizPage() {
     };
     localStorage.setItem(`${CACHE_KEY_PREFIX}${quizId}`, JSON.stringify(attempt));
     
+    // Submit to context for leaderboard
+    submitQuizAttempt(quizId!, answers);
+    
     setIsSubmitted(true);
     exitFullscreen();
     toast.success('Quiz submitted successfully!');
@@ -146,7 +151,7 @@ export default function QuizPage() {
   if (isCreator) {
     return (
       <AppLayout>
-        <div className="max-w-3xl mx-auto py-6 px-4">
+        <div className="max-w-4xl mx-auto py-6 px-4">
           <Button
             variant="ghost"
             onClick={() => navigate(`/class/${classId}/classwork`)}
@@ -156,57 +161,82 @@ export default function QuizPage() {
             Back to Classwork
           </Button>
 
-          <Card className="shadow-card rounded-2xl">
-            <CardContent className="p-6">
-              <h1 className="text-2xl font-bold mb-2">{quiz.title}</h1>
-              {quiz.description && (
-                <p className="text-muted-foreground mb-4">{quiz.description}</p>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold mb-2">{quiz.title}</h1>
+            {quiz.description && (
+              <p className="text-muted-foreground mb-4">{quiz.description}</p>
+            )}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{quiz.totalPoints} points</span>
+              <span>•</span>
+              <span>{quiz.questions.length} questions</span>
+              {quiz.requireFullscreen && (
+                <>
+                  <span>•</span>
+                  <Badge variant="outline" className="text-xs">
+                    <Maximize className="w-3 h-3 mr-1" />
+                    Fullscreen Required
+                  </Badge>
+                </>
               )}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
-                <span>{quiz.totalPoints} points</span>
-                <span>•</span>
-                <span>{quiz.questions.length} questions</span>
-                {quiz.requireFullscreen && (
-                  <>
-                    <span>•</span>
-                    <Badge variant="outline" className="text-xs">
-                      <Maximize className="w-3 h-3 mr-1" />
-                      Fullscreen Required
-                    </Badge>
-                  </>
-                )}
-              </div>
+            </div>
+          </div>
 
-              <div className="space-y-6">
-                {quiz.questions.map((question, index) => (
-                  <div key={question.id} className="p-4 bg-muted/30 rounded-xl">
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="font-medium">Question {index + 1}</span>
-                      <Badge variant="secondary">{question.points} pts</Badge>
-                    </div>
-                    <p className="mb-3">{question.text}</p>
-                    <div className="space-y-2">
-                      {question.options?.map((option) => (
-                        <div
-                          key={option.id}
-                          className={`p-3 rounded-lg ${
-                            option.id === question.correctOptionId
-                              ? 'bg-primary/10 border border-primary'
-                              : 'bg-background border border-border'
-                          }`}
-                        >
-                          {option.text}
-                          {option.id === question.correctOptionId && (
-                            <Badge className="ml-2" variant="default">Correct</Badge>
-                          )}
+          <Tabs defaultValue="submissions" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 max-w-md">
+              <TabsTrigger value="submissions" className="flex items-center gap-2">
+                <Trophy className="w-4 h-4" />
+                Submissions
+              </TabsTrigger>
+              <TabsTrigger value="questions" className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Questions
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="submissions">
+              <SubmissionsLeaderboard 
+                submissions={quizSubmissions}
+                title={quiz.title}
+                totalStudents={students.length}
+              />
+            </TabsContent>
+
+            <TabsContent value="questions">
+              <Card className="shadow-card rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    {quiz.questions.map((question, index) => (
+                      <div key={question.id} className="p-4 bg-muted/30 rounded-xl">
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="font-medium">Question {index + 1}</span>
+                          <Badge variant="secondary">{question.points} pts</Badge>
                         </div>
-                      ))}
-                    </div>
+                        <p className="mb-3">{question.text}</p>
+                        <div className="space-y-2">
+                          {question.options?.map((option) => (
+                            <div
+                              key={option.id}
+                              className={`p-3 rounded-lg ${
+                                option.id === question.correctOptionId
+                                  ? 'bg-primary/10 border border-primary'
+                                  : 'bg-background border border-border'
+                              }`}
+                            >
+                              {option.text}
+                              {option.id === question.correctOptionId && (
+                                <Badge className="ml-2" variant="default">Correct</Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </AppLayout>
     );
@@ -231,7 +261,7 @@ export default function QuizPage() {
 
               {quiz.requireFullscreen && (
                 <div className="bg-muted/50 p-4 rounded-xl mb-6 flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  <AlertTriangle className="w-5 h-5 text-secondary" />
                   <p className="text-sm text-left">
                     This quiz requires fullscreen mode. You must stay in fullscreen until you submit.
                   </p>

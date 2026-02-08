@@ -10,8 +10,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Clock, Code } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, Clock, Code, FileText, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
+import { SubmissionsLeaderboard } from '@/components/class/SubmissionsLeaderboard';
 
 const CACHE_KEY_PREFIX = 'questions_attempt_';
 
@@ -25,11 +27,13 @@ interface QuestionAttempt {
 export default function QuestionsPage() {
   const { classId, questionSetId } = useParams<{ classId: string; questionSetId: string }>();
   const navigate = useNavigate();
-  const { getQuestionSetById, getClassById, isCreatorOfClass } = useApp();
+  const { getQuestionSetById, getClassById, isCreatorOfClass, getQuestionSetSubmissions, getStudentsByClass, submitQuestionSetAttempt } = useApp();
   
   const questionSet = questionSetId ? getQuestionSetById(questionSetId) : undefined;
   const classData = classId ? getClassById(classId) : undefined;
   const isCreator = classId ? isCreatorOfClass(classId) : false;
+  const questionSetSubmissions = questionSetId ? getQuestionSetSubmissions(questionSetId) : [];
+  const students = classId ? getStudentsByClass(classId) : [];
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -82,6 +86,9 @@ export default function QuestionsPage() {
     };
     localStorage.setItem(`${CACHE_KEY_PREFIX}${questionSetId}`, JSON.stringify(attempt));
     
+    // Submit to context for leaderboard
+    submitQuestionSetAttempt(questionSetId!, answers);
+    
     setIsSubmitted(true);
     toast.success('Answers submitted successfully!');
   };
@@ -103,7 +110,7 @@ export default function QuestionsPage() {
   if (isCreator) {
     return (
       <AppLayout>
-        <div className="max-w-3xl mx-auto py-6 px-4">
+        <div className="max-w-4xl mx-auto py-6 px-4">
           <Button
             variant="ghost"
             onClick={() => navigate(`/class/${classId}/classwork`)}
@@ -113,64 +120,89 @@ export default function QuestionsPage() {
             Back to Classwork
           </Button>
 
-          <Card className="shadow-card rounded-2xl">
-            <CardContent className="p-6">
-              <h1 className="text-2xl font-bold mb-2">{questionSet.title}</h1>
-              {questionSet.description && (
-                <p className="text-muted-foreground mb-4">{questionSet.description}</p>
-              )}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
-                <span>{questionSet.totalPoints} points</span>
-                <span>•</span>
-                <span>{questionSet.questions.length} questions</span>
-              </div>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold mb-2">{questionSet.title}</h1>
+            {questionSet.description && (
+              <p className="text-muted-foreground mb-4">{questionSet.description}</p>
+            )}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{questionSet.totalPoints} points</span>
+              <span>•</span>
+              <span>{questionSet.questions.length} questions</span>
+            </div>
+          </div>
 
-              <div className="space-y-6">
-                {questionSet.questions.map((question, index) => (
-                  <div key={question.id} className="p-4 bg-muted/30 rounded-xl">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Question {index + 1}</span>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {question.type.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <Badge variant="secondary">{question.points} pts</Badge>
-                    </div>
-                    <p className="mb-3">{question.text}</p>
-                    
-                    {question.type === 'multiple_choice' && (
-                      <div className="space-y-2">
-                        {question.options?.map((option) => (
-                          <div
-                            key={option.id}
-                            className={`p-3 rounded-lg ${
-                              option.id === question.correctOptionId
-                                ? 'bg-primary/10 border border-primary'
-                                : 'bg-background border border-border'
-                            }`}
-                          >
-                            {option.text}
-                            {option.id === question.correctOptionId && (
-                              <Badge className="ml-2" variant="default">Correct</Badge>
-                            )}
+          <Tabs defaultValue="submissions" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-2 max-w-md">
+              <TabsTrigger value="submissions" className="flex items-center gap-2">
+                <Trophy className="w-4 h-4" />
+                Submissions
+              </TabsTrigger>
+              <TabsTrigger value="questions" className="flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Questions
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="submissions">
+              <SubmissionsLeaderboard 
+                submissions={questionSetSubmissions}
+                title={questionSet.title}
+                totalStudents={students.length}
+              />
+            </TabsContent>
+
+            <TabsContent value="questions">
+              <Card className="shadow-card rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    {questionSet.questions.map((question, index) => (
+                      <div key={question.id} className="p-4 bg-muted/30 rounded-xl">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">Question {index + 1}</span>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {question.type.replace('_', ' ')}
+                            </Badge>
                           </div>
-                        ))}
+                          <Badge variant="secondary">{question.points} pts</Badge>
+                        </div>
+                        <p className="mb-3">{question.text}</p>
+                        
+                        {question.type === 'multiple_choice' && (
+                          <div className="space-y-2">
+                            {question.options?.map((option) => (
+                              <div
+                                key={option.id}
+                                className={`p-3 rounded-lg ${
+                                  option.id === question.correctOptionId
+                                    ? 'bg-primary/10 border border-primary'
+                                    : 'bg-background border border-border'
+                                }`}
+                              >
+                                {option.text}
+                                {option.id === question.correctOptionId && (
+                                  <Badge className="ml-2" variant="default">Correct</Badge>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {question.type === 'code' && (
+                          <div className="bg-background p-3 rounded-lg border">
+                            <code className="text-sm text-muted-foreground">
+                              // {question.codeLanguage} code expected
+                            </code>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    
-                    {question.type === 'code' && (
-                      <div className="bg-background p-3 rounded-lg border">
-                        <code className="text-sm text-muted-foreground">
-                          // {question.codeLanguage} code expected
-                        </code>
-                      </div>
-                    )}
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </AppLayout>
     );

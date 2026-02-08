@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { mockClasses as initialClasses, mockAssignments as initialAssignments, mockAnnouncements, mockStudents, mockSubmissions, mockMaterials as initialMaterials, mockEnrollments as initialEnrollments } from '@/data/mockData';
 import type { Quiz, QuestionSet, Question } from '@/types/classwork';
+import type { SubmissionEntry } from '@/components/class/SubmissionsLeaderboard';
 
 export interface User {
   id: string;
@@ -133,6 +134,8 @@ interface AppContextType {
   enrollments: Enrollment[];
   quizzes: Quiz[];
   questionSets: QuestionSet[];
+  quizSubmissions: Record<string, SubmissionEntry[]>;
+  questionSetSubmissions: Record<string, SubmissionEntry[]>;
   getClassById: (id: string) => ClassData | undefined;
   getAssignmentsByClass: (classId: string) => Assignment[];
   getAnnouncementsByClass: (classId: string) => Announcement[];
@@ -143,6 +146,8 @@ interface AppContextType {
   getQuestionSetsByClass: (classId: string) => QuestionSet[];
   getQuizById: (quizId: string) => Quiz | undefined;
   getQuestionSetById: (questionSetId: string) => QuestionSet | undefined;
+  getQuizSubmissions: (quizId: string) => SubmissionEntry[];
+  getQuestionSetSubmissions: (questionSetId: string) => SubmissionEntry[];
   getUserClasses: () => ClassData[];
   getClassByStreamCode: (code: string) => ClassData | undefined;
   joinClass: (streamCode: string) => { success: boolean; message: string };
@@ -150,6 +155,8 @@ interface AppContextType {
   addQuiz: (input: CreateQuizInput) => void;
   addQuestionSet: (input: CreateQuestionSetInput) => void;
   addMaterial: (input: CreateMaterialInput) => void;
+  submitQuizAttempt: (quizId: string, answers: Record<string, string>) => void;
+  submitQuestionSetAttempt: (questionSetId: string, answers: Record<string, string>) => void;
   isEnrolledInClass: (classId: string) => boolean;
   isCreatorOfClass: (classId: string) => boolean;
 }
@@ -179,6 +186,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [materials, setMaterials] = useState<Material[]>(initialMaterials);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
+  const [quizSubmissions, setQuizSubmissions] = useState<Record<string, SubmissionEntry[]>>({});
+  const [questionSetSubmissions, setQuestionSetSubmissions] = useState<Record<string, SubmissionEntry[]>>({});
 
   const getClassById = (id: string) => classes.find((c) => c.id === id);
   
@@ -205,6 +214,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getQuizById = (quizId: string) => quizzes.find((q) => q.id === quizId);
 
   const getQuestionSetById = (questionSetId: string) => questionSets.find((q) => q.id === questionSetId);
+
+  const getQuizSubmissions = (quizId: string) => quizSubmissions[quizId] || [];
+
+  const getQuestionSetSubmissions = (questionSetId: string) => questionSetSubmissions[questionSetId] || [];
 
   const isCreatorOfClass = (classId: string) => {
     const classData = getClassById(classId);
@@ -359,6 +372,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMaterials(prev => [...prev, material]);
   };
 
+  const submitQuizAttempt = (quizId: string, answers: Record<string, string>) => {
+    const quiz = getQuizById(quizId);
+    if (!quiz) return;
+
+    // Calculate score
+    let score = 0;
+    quiz.questions.forEach(q => {
+      if (answers[q.id] === q.correctOptionId) {
+        score += q.points;
+      }
+    });
+
+    const submission: SubmissionEntry = {
+      id: `sub-${Date.now()}`,
+      studentId: currentUser.id,
+      studentName: currentUser.name,
+      submittedAt: new Date().toISOString(),
+      score,
+      totalPoints: quiz.totalPoints,
+      status: 'submitted',
+      timeTaken: Math.floor(Math.random() * 20) + 5, // Mock time
+    };
+
+    setQuizSubmissions(prev => ({
+      ...prev,
+      [quizId]: [...(prev[quizId] || []), submission],
+    }));
+  };
+
+  const submitQuestionSetAttempt = (questionSetId: string, _answers: Record<string, string>) => {
+    const questionSet = getQuestionSetById(questionSetId);
+    if (!questionSet) return;
+
+    // For question sets, score is pending grading
+    const submission: SubmissionEntry = {
+      id: `sub-${Date.now()}`,
+      studentId: currentUser.id,
+      studentName: currentUser.name,
+      submittedAt: new Date().toISOString(),
+      score: 0,
+      totalPoints: questionSet.totalPoints,
+      status: 'pending',
+      timeTaken: Math.floor(Math.random() * 30) + 10,
+    };
+
+    setQuestionSetSubmissions(prev => ({
+      ...prev,
+      [questionSetId]: [...(prev[questionSetId] || []), submission],
+    }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -372,6 +436,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         enrollments,
         quizzes,
         questionSets,
+        quizSubmissions,
+        questionSetSubmissions,
         getClassById,
         getAssignmentsByClass,
         getAnnouncementsByClass,
@@ -382,6 +448,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getQuestionSetsByClass,
         getQuizById,
         getQuestionSetById,
+        getQuizSubmissions,
+        getQuestionSetSubmissions,
         getUserClasses,
         getClassByStreamCode,
         joinClass,
@@ -389,6 +457,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addQuiz,
         addQuestionSet,
         addMaterial,
+        submitQuizAttempt,
+        submitQuestionSetAttempt,
         isEnrolledInClass,
         isCreatorOfClass,
       }}

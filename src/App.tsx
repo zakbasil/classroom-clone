@@ -7,6 +7,8 @@ import { AppProvider } from "@/contexts/AppContext";
 import Welcome from "./pages/Welcome";
 import Dashboard from "./pages/Dashboard";
 import ClassPage from "./pages/ClassPage";
+import QuizPage from "./pages/QuizPage";
+import QuestionsPage from "./pages/QuestionsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +25,8 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/class/:classId" element={<ClassPage />} />
             <Route path="/class/:classId/:tab" element={<ClassPage />} />
+            <Route path="/class/:classId/quiz/:quizId" element={<QuizPage />} />
+            <Route path="/class/:classId/questions/:questionSetId" element={<QuestionsPage />} />
             <Route path="/calendar" element={<Dashboard />} />
             <Route path="/todo" element={<Dashboard />} />
             <Route path="/archived" element={<Dashboard />} />

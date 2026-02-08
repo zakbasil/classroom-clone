@@ -1,10 +1,10 @@
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, FileText, ChevronRight, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { FileText, ChevronRight, Clock, CheckCircle, AlertCircle, ClipboardList, FileQuestion } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { CreateClassworkMenu } from './CreateClassworkMenu';
 
 interface ClassworkTabProps {
   classId: string;
@@ -53,15 +53,33 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
     }
   };
 
+  const getAssignmentIcon = (type?: string) => {
+    switch (type) {
+      case 'quiz':
+        return <ClipboardList className="w-5 h-5 text-primary" />;
+      case 'questions':
+        return <FileQuestion className="w-5 h-5 text-primary" />;
+      default:
+        return <FileText className="w-5 h-5 text-primary" />;
+    }
+  };
+
+  const getAssignmentLink = (assignment: typeof assignments[0]) => {
+    if (assignment.type === 'quiz' && assignment.quizId) {
+      return `/class/${classId}/quiz/${assignment.quizId}`;
+    }
+    if (assignment.type === 'questions' && assignment.questionSetId) {
+      return `/class/${classId}/questions/${assignment.questionSetId}`;
+    }
+    return `/class/${classId}/assignment/${assignment.id}`;
+  };
+
   return (
     <div className="max-w-3xl mx-auto py-6 px-4">
       {/* Create Button (Creator only) */}
       {isCreator && (
         <div className="mb-6">
-          <Button className="rounded-xl gradient-primary shadow-soft">
-            <Plus className="w-4 h-4 mr-2" />
-            Create
-          </Button>
+          <CreateClassworkMenu classId={classId} />
         </div>
       )}
 
@@ -89,17 +107,25 @@ export function ClassworkTab({ classId }: ClassworkTabProps) {
                 {topicAssignments.map((assignment) => (
                   <Link 
                     key={assignment.id} 
-                    to={`/class/${classId}/assignment/${assignment.id}`}
+                    to={getAssignmentLink(assignment)}
                   >
                     <Card className="shadow-card hover:shadow-elevated rounded-2xl transition-all cursor-pointer group">
                       <CardContent className="p-4 flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-5 h-5 text-primary" />
+                          {getAssignmentIcon(assignment.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
-                            {assignment.title}
-                          </h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                              {assignment.title}
+                            </h4>
+                            {assignment.type === 'quiz' && (
+                              <Badge variant="outline" className="text-xs">Quiz</Badge>
+                            )}
+                            {assignment.type === 'questions' && (
+                              <Badge variant="outline" className="text-xs">Questions</Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                             <span>Due {format(new Date(assignment.dueDate), 'MMM d')}</span>
                             <span>•</span>

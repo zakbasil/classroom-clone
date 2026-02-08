@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { mockClasses as initialClasses, mockAssignments, mockAnnouncements, mockStudents, mockSubmissions, mockMaterials, mockEnrollments as initialEnrollments } from '@/data/mockData';
+import { mockClasses as initialClasses, mockAssignments as initialAssignments, mockAnnouncements, mockStudents, mockSubmissions, mockMaterials as initialMaterials, mockEnrollments as initialEnrollments } from '@/data/mockData';
+import type { Quiz, QuestionSet, Question } from '@/types/classwork';
 
 export interface User {
   id: string;
@@ -40,6 +41,9 @@ export interface Assignment {
   topic?: string;
   attachments?: { name: string; type: string; url: string }[];
   status?: 'assigned' | 'submitted' | 'graded' | 'late' | 'missing';
+  type?: 'assignment' | 'quiz' | 'questions';
+  quizId?: string;
+  questionSetId?: string;
 }
 
 export interface Announcement {
@@ -90,6 +94,34 @@ interface CreateClassInput {
   coverColor: string;
 }
 
+interface CreateQuizInput {
+  classId: string;
+  title: string;
+  description?: string;
+  topic?: string;
+  questions: Question[];
+  totalPoints: number;
+  dueDate: string;
+  requireFullscreen: boolean;
+}
+
+interface CreateQuestionSetInput {
+  classId: string;
+  title: string;
+  description?: string;
+  topic?: string;
+  questions: Question[];
+  totalPoints: number;
+  dueDate: string;
+}
+
+interface CreateMaterialInput {
+  classId: string;
+  title: string;
+  description?: string;
+  topic?: string;
+}
+
 interface AppContextType {
   currentUser: User;
   classes: ClassData[];
@@ -99,16 +131,25 @@ interface AppContextType {
   submissions: Submission[];
   materials: Material[];
   enrollments: Enrollment[];
+  quizzes: Quiz[];
+  questionSets: QuestionSet[];
   getClassById: (id: string) => ClassData | undefined;
   getAssignmentsByClass: (classId: string) => Assignment[];
   getAnnouncementsByClass: (classId: string) => Announcement[];
   getStudentsByClass: (classId: string) => Student[];
   getSubmissionsByAssignment: (assignmentId: string) => Submission[];
   getMaterialsByClass: (classId: string) => Material[];
+  getQuizzesByClass: (classId: string) => Quiz[];
+  getQuestionSetsByClass: (classId: string) => QuestionSet[];
+  getQuizById: (quizId: string) => Quiz | undefined;
+  getQuestionSetById: (questionSetId: string) => QuestionSet | undefined;
   getUserClasses: () => ClassData[];
   getClassByStreamCode: (code: string) => ClassData | undefined;
   joinClass: (streamCode: string) => { success: boolean; message: string };
   createClass: (input: CreateClassInput) => { success: boolean; message: string; classData?: ClassData };
+  addQuiz: (input: CreateQuizInput) => void;
+  addQuestionSet: (input: CreateQuestionSetInput) => void;
+  addMaterial: (input: CreateMaterialInput) => void;
   isEnrolledInClass: (classId: string) => boolean;
   isCreatorOfClass: (classId: string) => boolean;
 }
@@ -134,11 +175,15 @@ function generateStreamCode(): string {
 export function AppProvider({ children }: { children: ReactNode }) {
   const [classes, setClasses] = useState<ClassData[]>(initialClasses);
   const [enrollments, setEnrollments] = useState<Enrollment[]>(initialEnrollments);
+  const [assignments, setAssignments] = useState<Assignment[]>(initialAssignments);
+  const [materials, setMaterials] = useState<Material[]>(initialMaterials);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
 
   const getClassById = (id: string) => classes.find((c) => c.id === id);
   
   const getAssignmentsByClass = (classId: string) => 
-    mockAssignments.filter((a) => a.classId === classId);
+    assignments.filter((a) => a.classId === classId);
   
   const getAnnouncementsByClass = (classId: string) => 
     mockAnnouncements.filter((a) => a.classId === classId);
@@ -149,7 +194,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     mockSubmissions.filter((s) => s.assignmentId === assignmentId);
   
   const getMaterialsByClass = (classId: string) => 
-    mockMaterials.filter((m) => m.classId === classId);
+    materials.filter((m) => m.classId === classId);
+
+  const getQuizzesByClass = (classId: string) => 
+    quizzes.filter((q) => q.classId === classId);
+
+  const getQuestionSetsByClass = (classId: string) => 
+    questionSets.filter((q) => q.classId === classId);
+
+  const getQuizById = (quizId: string) => quizzes.find((q) => q.id === quizId);
+
+  const getQuestionSetById = (questionSetId: string) => questionSets.find((q) => q.id === questionSetId);
 
   const isCreatorOfClass = (classId: string) => {
     const classData = getClassById(classId);
@@ -228,27 +283,112 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   };
 
+  const addQuiz = (input: CreateQuizInput) => {
+    const quiz: Quiz = {
+      id: `quiz-${Date.now()}`,
+      classId: input.classId,
+      title: input.title,
+      description: input.description,
+      topic: input.topic,
+      questions: input.questions,
+      totalPoints: input.totalPoints,
+      dueDate: input.dueDate,
+      createdAt: new Date().toISOString().split('T')[0],
+      requireFullscreen: input.requireFullscreen,
+    };
+    setQuizzes(prev => [...prev, quiz]);
+
+    // Add to assignments list
+    const assignment: Assignment = {
+      id: `assign-quiz-${Date.now()}`,
+      classId: input.classId,
+      title: input.title,
+      description: input.description || '',
+      points: input.totalPoints,
+      dueDate: input.dueDate,
+      createdAt: new Date().toISOString().split('T')[0],
+      topic: input.topic,
+      type: 'quiz',
+      quizId: quiz.id,
+      status: 'assigned',
+    };
+    setAssignments(prev => [...prev, assignment]);
+  };
+
+  const addQuestionSet = (input: CreateQuestionSetInput) => {
+    const questionSet: QuestionSet = {
+      id: `qs-${Date.now()}`,
+      classId: input.classId,
+      title: input.title,
+      description: input.description,
+      topic: input.topic,
+      questions: input.questions,
+      totalPoints: input.totalPoints,
+      dueDate: input.dueDate,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setQuestionSets(prev => [...prev, questionSet]);
+
+    // Add to assignments list
+    const assignment: Assignment = {
+      id: `assign-qs-${Date.now()}`,
+      classId: input.classId,
+      title: input.title,
+      description: input.description || '',
+      points: input.totalPoints,
+      dueDate: input.dueDate,
+      createdAt: new Date().toISOString().split('T')[0],
+      topic: input.topic,
+      type: 'questions',
+      questionSetId: questionSet.id,
+      status: 'assigned',
+    };
+    setAssignments(prev => [...prev, assignment]);
+  };
+
+  const addMaterial = (input: CreateMaterialInput) => {
+    const material: Material = {
+      id: `mat-${Date.now()}`,
+      classId: input.classId,
+      title: input.title,
+      description: input.description,
+      topic: input.topic,
+      createdAt: new Date().toISOString().split('T')[0],
+      attachments: [],
+    };
+    setMaterials(prev => [...prev, material]);
+  };
+
   return (
     <AppContext.Provider
       value={{
         currentUser,
         classes,
-        assignments: mockAssignments,
+        assignments,
         announcements: mockAnnouncements,
         students: mockStudents,
         submissions: mockSubmissions,
-        materials: mockMaterials,
+        materials,
         enrollments,
+        quizzes,
+        questionSets,
         getClassById,
         getAssignmentsByClass,
         getAnnouncementsByClass,
         getStudentsByClass,
         getSubmissionsByAssignment,
         getMaterialsByClass,
+        getQuizzesByClass,
+        getQuestionSetsByClass,
+        getQuizById,
+        getQuestionSetById,
         getUserClasses,
         getClassByStreamCode,
         joinClass,
         createClass,
+        addQuiz,
+        addQuestionSet,
+        addMaterial,
         isEnrolledInClass,
         isCreatorOfClass,
       }}

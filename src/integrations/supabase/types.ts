@@ -14,13 +14,445 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      announcements: {
+        Row: {
+          attachments: Json
+          author_id: string
+          class_id: string
+          content: string
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          author_id: string
+          class_id: string
+          content: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          author_id?: string
+          class_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignments: {
+        Row: {
+          class_id: string
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          points: number
+          question_set_id: string | null
+          quiz_id: string | null
+          title: string
+          topic: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          points?: number
+          question_set_id?: string | null
+          quiz_id?: string | null
+          title: string
+          topic?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          points?: number
+          question_set_id?: string | null
+          quiz_id?: string | null
+          title?: string
+          topic?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_assignments_question_set"
+            columns: ["question_set_id"]
+            isOneToOne: false
+            referencedRelation: "question_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_assignments_quiz"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          cover_color: string
+          created_at: string
+          creator_id: string
+          id: string
+          name: string
+          room: string | null
+          section: string | null
+          stream_code: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          cover_color?: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          name: string
+          room?: string | null
+          section?: string | null
+          stream_code: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cover_color?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          name?: string
+          room?: string | null
+          section?: string | null
+          stream_code?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      enrollments: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materials: {
+        Row: {
+          attachments: Json
+          class_id: string
+          created_at: string
+          description: string | null
+          id: string
+          title: string
+          topic: string | null
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          class_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          title: string
+          topic?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          class_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          title?: string
+          topic?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materials_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      question_set_submissions: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          question_set_id: string
+          score: number | null
+          started_at: string
+          submitted_at: string | null
+          time_taken: number | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          question_set_id: string
+          score?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          time_taken?: number | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          question_set_id?: string
+          score?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          time_taken?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_set_submissions_question_set_id_fkey"
+            columns: ["question_set_id"]
+            isOneToOne: false
+            referencedRelation: "question_sets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_sets: {
+        Row: {
+          class_id: string
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          questions: Json
+          title: string
+          topic: string | null
+          total_points: number
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          questions?: Json
+          title: string
+          topic?: string | null
+          total_points?: number
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          questions?: Json
+          title?: string
+          topic?: string | null
+          total_points?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_sets_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_submissions: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          quiz_id: string
+          score: number
+          started_at: string
+          submitted_at: string | null
+          time_taken: number | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          quiz_id: string
+          score?: number
+          started_at?: string
+          submitted_at?: string | null
+          time_taken?: number | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          quiz_id?: string
+          score?: number
+          started_at?: string
+          submitted_at?: string | null
+          time_taken?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_submissions_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quizzes: {
+        Row: {
+          class_id: string
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          questions: Json
+          require_fullscreen: boolean
+          time_limit: number | null
+          title: string
+          topic: string | null
+          total_points: number
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          questions?: Json
+          require_fullscreen?: boolean
+          time_limit?: number | null
+          title: string
+          topic?: string | null
+          total_points?: number
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          questions?: Json
+          require_fullscreen?: boolean
+          time_limit?: number | null
+          title?: string
+          topic?: string | null
+          total_points?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_class_creator: { Args: { class_id: string }; Returns: boolean }
+      is_class_member: { Args: { class_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

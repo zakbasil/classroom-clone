@@ -3,8 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppProvider } from "@/contexts/AppContext";
+import { AuthProvider } from "@/hooks/useAuth";
+import { DataProvider } from "@/contexts/DataContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Welcome from "./pages/Welcome";
+import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import ClassPage from "./pages/ClassPage";
 import QuizPage from "./pages/QuizPage";
@@ -16,26 +19,65 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AppProvider>
+      <AuthProvider>
+        <DataProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Welcome />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/class/:classId" element={<ClassPage />} />
-            <Route path="/class/:classId/:tab" element={<ClassPage />} />
-            <Route path="/class/:classId/quiz/:quizId" element={<QuizPage />} />
-            <Route path="/class/:classId/questions/:questionSetId" element={<QuestionsPage />} />
-            <Route path="/calendar" element={<Dashboard />} />
-            <Route path="/todo" element={<Dashboard />} />
-            <Route path="/archived" element={<Dashboard />} />
-            <Route path="/settings" element={<Dashboard />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/class/:classId" element={
+              <ProtectedRoute>
+                <ClassPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/class/:classId/:tab" element={
+              <ProtectedRoute>
+                <ClassPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/class/:classId/quiz/:quizId" element={
+              <ProtectedRoute>
+                <QuizPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/class/:classId/questions/:questionSetId" element={
+              <ProtectedRoute>
+                <QuestionsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/calendar" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/todo" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/archived" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </AppProvider>
+        </DataProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

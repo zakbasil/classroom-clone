@@ -19,8 +19,11 @@ import {
   BookOpen,
   CheckSquare,
   Archive,
+  Shield,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 const mainNavItems = [
   { title: 'Home', url: '/dashboard', icon: Home },
@@ -35,6 +38,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const { classes } = useData();
+  const { isAdmin, isTeacher } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
   const isClassActive = (classId: string) => location.pathname.startsWith(`/class/${classId}`);
@@ -70,6 +74,42 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {isTeacher() && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/templates"
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors',
+                        isActive('/templates')
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                      )}
+                    >
+                      <FileText className="w-5 h-5 flex-shrink-0" />
+                      {!collapsed && <span>Templates</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              {isAdmin() && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/admin"
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors',
+                        isActive('/admin')
+                          ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                      )}
+                    >
+                      <Shield className="w-5 h-5 flex-shrink-0" />
+                      {!collapsed && <span>Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

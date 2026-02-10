@@ -74,13 +74,13 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-elevated rounded-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50/30 via-background to-yellow-50/30 dark:from-amber-950/20 dark:via-background dark:to-yellow-950/20 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-elevated rounded-2xl border-amber-200 dark:border-amber-800">
         <CardHeader className="text-center pb-2">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <GraduationCap className="w-8 h-8 text-primary" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900/50 dark:to-yellow-900/50 flex items-center justify-center mx-auto mb-4">
+            <GraduationCap className="w-8 h-8 bg-gradient-to-r from-amber-600 to-yellow-600 dark:from-amber-400 dark:to-yellow-400 bg-clip-text text-transparent" />
           </div>
-          <CardTitle className="text-2xl font-bold">Classroom</CardTitle>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-yellow-600 dark:from-amber-400 dark:to-yellow-400 bg-clip-text text-transparent">iSkew PlayGround</CardTitle>
           <CardDescription>
             Sign in to access your classes and assignments
           </CardDescription>
@@ -124,7 +124,7 @@ export default function Auth() {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full gradient-primary" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black dark:text-black" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -199,7 +199,7 @@ export default function Auth() {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full gradient-primary" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black dark:text-black" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />

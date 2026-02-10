@@ -10,13 +10,14 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Clock, Maximize, AlertTriangle, FileText, Trophy, Timer, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Maximize, AlertTriangle, FileText, Trophy, Timer, CheckCircle, XCircle, Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { SubmissionsLeaderboard } from '@/components/class/SubmissionsLeaderboard';
 import { QuizTimer, useQuizDeadline } from '@/components/class/QuizTimer';
 import { format } from 'date-fns';
 import type { QuizAttempt } from '@/types/classwork';
 import type { Quiz, SubmissionEntry } from '@/contexts/DataContext';
+import { downloadFile } from '@/lib/api';
 
 const CACHE_KEY_PREFIX = 'quiz_attempt_';
 
@@ -39,9 +40,24 @@ export default function QuizPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [timerStartedAt, setTimerStartedAt] = useState<string | null>(null);
   const [isTimerExpired, setIsTimerExpired] = useState(false);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
 
   // Check if deadline has passed
   const isPastDeadline = useQuizDeadline(quiz?.dueDate || new Date().toISOString());
+
+  const handleDownloadQuizReport = async () => {
+    if (!quizId) return;
+    setIsDownloadingReport(true);
+    try {
+      await downloadFile(`/api/quizzes/${quizId}/report`, `Quiz_Report_${quiz.title.replace(/\s+/g, '_')}.xlsx`);
+      toast.success('Quiz report downloaded successfully!');
+    } catch (error) {
+      console.error('Error downloading quiz report:', error);
+      toast.error('Failed to download quiz report');
+    } finally {
+      setIsDownloadingReport(false);
+    }
+  };
 
   // Load quiz data
   useEffect(() => {
@@ -283,10 +299,34 @@ export default function QuizPage() {
           </Button>
 
           <div className="mb-6">
-            <h1 className="text-2xl font-bold mb-2">{quiz.title}</h1>
-            {quiz.description && (
-              <p className="text-muted-foreground mb-4">{quiz.description}</p>
-            )}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold mb-2">{quiz.title}</h1>
+                {quiz.description && (
+                  <p className="text-muted-foreground mb-4">{quiz.description}</p>
+                )}
+              </div>
+              <div className="flex gap-2 ml-4">
+                <Button
+                  variant="outline"
+                  onClick={handleDownloadQuizReport}
+                  disabled={isDownloadingReport}
+                  className="flex items-center gap-2"
+                >
+                  {isDownloadingReport ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Download Quiz Report
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
             <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               <span>{quiz.totalPoints} points</span>
               <span>•</span>

@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@/lib/api';
+import { apiGet, apiPost, apiDelete, apiPut } from '@/lib/api';
 import type { Question } from '@/types/classwork';
 
 // Re-export types used by DataContext (snake_case for DB-shaped responses where needed)
@@ -540,4 +540,286 @@ export async function upsertQuestionSetSubmission(
   _submitted: boolean
 ) {
   return null;
+}
+
+// Admin API functions
+export interface AdminUser {
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  isApproved: boolean;
+  createdAt: string;
+}
+
+export interface TeacherSchedule {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  classId?: string;
+  className: string;
+  section?: string;
+  subject?: string;
+  room?: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+}
+
+export async function getAdminUsers(): Promise<AdminUser[]> {
+  return apiGet<AdminUser[]>('/api/admin/users');
+}
+
+export async function approveUser(userId: string): Promise<void> {
+  return apiPost(`/api/admin/users/${userId}/approve`, {});
+}
+
+export async function updateUserRole(userId: string, role: string): Promise<void> {
+  return apiPost(`/api/admin/users/${userId}/role`, { role });
+}
+
+export async function getSchedules(): Promise<TeacherSchedule[]> {
+  return apiGet<TeacherSchedule[]>('/api/admin/schedules');
+}
+
+export async function createSchedule(data: {
+  teacherId: string;
+  className: string;
+  section?: string;
+  subject?: string;
+  room?: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+}): Promise<TeacherSchedule> {
+  return apiPost<TeacherSchedule>('/api/admin/schedules', data);
+}
+
+export async function deleteSchedule(scheduleId: string): Promise<void> {
+  return apiDelete(`/api/admin/schedules/${scheduleId}`);
+}
+
+// Template API functions
+export interface QuizTemplate {
+  id: string;
+  title: string;
+  description?: string;
+  topic?: string;
+  questions: Question[];
+  totalPoints: number;
+  requireFullscreen: boolean;
+  timeLimit?: number;
+  isApproved?: boolean;
+  status: string; // 'Draft' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Published'
+}
+
+export interface AssignmentTemplate {
+  id: string;
+  title: string;
+  description?: string;
+  topic?: string;
+  points: number;
+  isApproved?: boolean;
+  status: string; // 'Draft' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Published'
+}
+
+export interface MaterialTemplate {
+  id: string;
+  title: string;
+  description?: string;
+  topic?: string;
+  fileUrl?: string;
+  linkUrl?: string;
+  isApproved?: boolean;
+  status: string; // 'Draft' | 'PendingApproval' | 'Approved' | 'Rejected' | 'Published'
+}
+
+// Quiz Templates
+export async function getQuizTemplates(): Promise<QuizTemplate[]> {
+  return apiGet<QuizTemplate[]>('/api/templates/quizzes');
+}
+
+export async function getPersonalQuizTemplates(): Promise<QuizTemplate[]> {
+  return apiGet<QuizTemplate[]>('/api/templates/quizzes/personal');
+}
+
+export async function getQuizTemplate(id: string): Promise<QuizTemplate> {
+  return apiGet<QuizTemplate>(`/api/templates/quizzes/${id}`);
+}
+
+export async function createQuizTemplate(data: {
+  title: string;
+  description?: string;
+  topic?: string;
+  questions?: Question[];
+  totalPoints: number;
+  requireFullscreen: boolean;
+  timeLimit?: number;
+  publish?: boolean;
+}): Promise<QuizTemplate> {
+  return apiPost<QuizTemplate>('/api/templates/quizzes', data);
+}
+
+export async function updateQuizTemplate(id: string, data: {
+  title: string;
+  description?: string;
+  topic?: string;
+  questions?: Question[];
+  totalPoints: number;
+  requireFullscreen: boolean;
+  timeLimit?: number;
+}): Promise<QuizTemplate> {
+  return apiPut<QuizTemplate>(`/api/templates/quizzes/${id}`, data);
+}
+
+export async function deleteQuizTemplate(templateId: string): Promise<void> {
+  return apiDelete(`/api/templates/quizzes/${templateId}`);
+}
+
+// Assignment Templates
+export async function getAssignmentTemplates(): Promise<AssignmentTemplate[]> {
+  return apiGet<AssignmentTemplate[]>('/api/templates/assignments');
+}
+
+export async function getPersonalAssignmentTemplates(): Promise<AssignmentTemplate[]> {
+  return apiGet<AssignmentTemplate[]>('/api/templates/assignments/personal');
+}
+
+export async function getAssignmentTemplate(id: string): Promise<AssignmentTemplate> {
+  return apiGet<AssignmentTemplate>(`/api/templates/assignments/${id}`);
+}
+
+export async function createAssignmentTemplate(data: {
+  title: string;
+  description?: string;
+  topic?: string;
+  points: number;
+  publish?: boolean;
+}): Promise<AssignmentTemplate> {
+  return apiPost<AssignmentTemplate>('/api/templates/assignments', data);
+}
+
+export async function updateAssignmentTemplate(id: string, data: {
+  title: string;
+  description?: string;
+  topic?: string;
+  points: number;
+}): Promise<AssignmentTemplate> {
+  return apiPut<AssignmentTemplate>(`/api/templates/assignments/${id}`, data);
+}
+
+export async function deleteAssignmentTemplate(templateId: string): Promise<void> {
+  return apiDelete(`/api/templates/assignments/${templateId}`);
+}
+
+// Material Templates
+export async function getMaterialTemplates(): Promise<MaterialTemplate[]> {
+  return apiGet<MaterialTemplate[]>('/api/templates/materials');
+}
+
+export async function getPersonalMaterialTemplates(): Promise<MaterialTemplate[]> {
+  return apiGet<MaterialTemplate[]>('/api/templates/materials/personal');
+}
+
+export async function getMaterialTemplate(id: string): Promise<MaterialTemplate> {
+  return apiGet<MaterialTemplate>(`/api/templates/materials/${id}`);
+}
+
+export async function createMaterialTemplate(data: {
+  title: string;
+  description?: string;
+  topic?: string;
+  fileUrl?: string;
+  linkUrl?: string;
+  publish?: boolean;
+}): Promise<MaterialTemplate> {
+  return apiPost<MaterialTemplate>('/api/templates/materials', data);
+}
+
+export async function updateMaterialTemplate(id: string, data: {
+  title: string;
+  description?: string;
+  topic?: string;
+  fileUrl?: string;
+  linkUrl?: string;
+}): Promise<MaterialTemplate> {
+  return apiPut<MaterialTemplate>(`/api/templates/materials/${id}`, data);
+}
+
+export async function deleteMaterialTemplate(templateId: string): Promise<void> {
+  return apiDelete(`/api/templates/materials/${templateId}`);
+}
+
+// Request Approval Templates
+export async function requestApprovalQuizTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/quizzes/${id}/request-approval`);
+}
+
+export async function requestApprovalAssignmentTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/assignments/${id}/request-approval`);
+}
+
+export async function requestApprovalMaterialTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/materials/${id}/request-approval`);
+}
+
+// Publish Templates (after approval)
+export async function publishQuizTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/quizzes/${id}/publish`);
+}
+
+export async function publishAssignmentTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/assignments/${id}/publish`);
+}
+
+export async function publishMaterialTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/materials/${id}/publish`);
+}
+
+// Admin Template Approval
+export interface TemplateForApproval {
+  id: string;
+  type: 'quiz' | 'assignment' | 'material';
+  title: string;
+  createdBy: string;
+  creatorName: string;
+  isApproved: boolean;
+  createdAt: string;
+  status?: string; // 'PendingApproval' | 'Approved'
+}
+
+export async function getQuizTemplatesForApproval(): Promise<TemplateForApproval[]> {
+  return apiGet<TemplateForApproval[]>('/api/admin/templates/quizzes');
+}
+
+export async function getAssignmentTemplatesForApproval(): Promise<TemplateForApproval[]> {
+  return apiGet<TemplateForApproval[]>('/api/admin/templates/assignments');
+}
+
+export async function getMaterialTemplatesForApproval(): Promise<TemplateForApproval[]> {
+  return apiGet<TemplateForApproval[]>('/api/admin/templates/materials');
+}
+
+export async function approveQuizTemplate(id: string): Promise<void> {
+  return apiPost(`/api/admin/templates/quizzes/${id}/approve`);
+}
+
+export async function rejectQuizTemplate(id: string): Promise<void> {
+  return apiPost(`/api/admin/templates/quizzes/${id}/reject`);
+}
+
+export async function approveAssignmentTemplate(id: string): Promise<void> {
+  return apiPost(`/api/admin/templates/assignments/${id}/approve`);
+}
+
+export async function rejectAssignmentTemplate(id: string): Promise<void> {
+  return apiPost(`/api/admin/templates/assignments/${id}/reject`);
+}
+
+export async function approveMaterialTemplate(id: string): Promise<void> {
+  return apiPost(`/api/admin/templates/materials/${id}/approve`);
+}
+
+export async function rejectMaterialTemplate(id: string): Promise<void> {
+  return apiPost(`/api/admin/templates/materials/${id}/reject`);
 }

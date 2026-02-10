@@ -12,6 +12,9 @@ import Dashboard from "./pages/Dashboard";
 import ClassPage from "./pages/ClassPage";
 import QuizPage from "./pages/QuizPage";
 import QuestionsPage from "./pages/QuestionsPage";
+import JoinClassPage from "./pages/JoinClassPage";
+import AdminPage from "./pages/AdminPage";
+import TemplatesPage from "./pages/TemplatesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +30,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Welcome />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/join/:streamCode" element={
+              <ProtectedRoute>
+                <JoinClassPage />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
@@ -70,6 +78,16 @@ const App = () => (
             <Route path="/settings" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/templates" element={
+              <ProtectedRoute>
+                <TemplatesPage />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

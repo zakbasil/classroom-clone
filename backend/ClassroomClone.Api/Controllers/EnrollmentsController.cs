@@ -30,7 +30,7 @@ public class EnrollmentsController : ControllerBase
         memberIds.AddRange(await _db.Enrollments.Where(e => e.ClassId == classId).Select(e => e.UserId).ToListAsync(ct));
         var profiles = await _db.Profiles
             .Where(p => memberIds.Contains(p.UserId))
-            .Select(p => new ProfileResponse(p.UserId.ToString(), p.Name, p.Email, p.AvatarUrl))
+            .Select(p => new ProfileResponse(p.UserId.ToString(), p.Name, p.Email, p.AvatarUrl, p.Role.ToString(), p.IsApproved))
             .ToListAsync(ct);
         return Ok(profiles);
     }

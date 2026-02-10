@@ -1,5 +1,390 @@
 [
   {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetSchedules",
+    "RelativePath": "api/Admin/schedules",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.ScheduleResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "CreateSchedule",
+    "RelativePath": "api/Admin/schedules",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.CreateScheduleRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.ScheduleResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "DeleteSchedule",
+    "RelativePath": "api/Admin/schedules/{scheduleId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "scheduleId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetApprovalHistory",
+    "RelativePath": "api/Admin/templates/approval-history",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.ApprovalHistoryResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetAssignmentTemplatesForApproval",
+    "RelativePath": "api/Admin/templates/assignments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.TemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "ApproveAssignmentTemplate",
+    "RelativePath": "api/Admin/templates/assignments/{id}/approve",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.ApprovalDecisionRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "RejectAssignmentTemplate",
+    "RelativePath": "api/Admin/templates/assignments/{id}/reject",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.ApprovalDecisionRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetAllAssignmentTemplates",
+    "RelativePath": "api/Admin/templates/assignments/all",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.TemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetMaterialTemplatesForApproval",
+    "RelativePath": "api/Admin/templates/materials",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.TemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "ApproveMaterialTemplate",
+    "RelativePath": "api/Admin/templates/materials/{id}/approve",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.ApprovalDecisionRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "RejectMaterialTemplate",
+    "RelativePath": "api/Admin/templates/materials/{id}/reject",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.ApprovalDecisionRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetAllMaterialTemplates",
+    "RelativePath": "api/Admin/templates/materials/all",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.TemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetQuizTemplatesForApproval",
+    "RelativePath": "api/Admin/templates/quizzes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.TemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "ApproveQuizTemplate",
+    "RelativePath": "api/Admin/templates/quizzes/{id}/approve",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.ApprovalDecisionRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "RejectQuizTemplate",
+    "RelativePath": "api/Admin/templates/quizzes/{id}/reject",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.ApprovalDecisionRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetAllQuizTemplates",
+    "RelativePath": "api/Admin/templates/quizzes/all",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.TemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "GetUsers",
+    "RelativePath": "api/Admin/users",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.UserResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "ApproveUser",
+    "RelativePath": "api/Admin/users/{userId}/approve",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.AdminController",
+    "Method": "UpdateUserRole",
+    "RelativePath": "api/Admin/users/{userId}/role",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.UpdateRoleRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "ClassroomClone.Api.Controllers.AnnouncementsController",
     "Method": "Create",
     "RelativePath": "api/Announcements",
@@ -154,6 +539,22 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.ClassesController",
+    "Method": "GetClassQuizReport",
+    "RelativePath": "api/Classes/{classId}/quizzes/report",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "classId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "ClassroomClone.Api.Controllers.ClassesController",
@@ -338,6 +739,26 @@
     ]
   },
   {
+    "ContainingType": "ClassroomClone.Api.Controllers.ProfilesController",
+    "Method": "GetMyProfile",
+    "RelativePath": "api/Profiles/me",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.DTOs.ProfileResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
     "ContainingType": "ClassroomClone.Api.Controllers.QuestionSetsController",
     "Method": "Create",
     "RelativePath": "api/QuestionSets",
@@ -443,6 +864,22 @@
   },
   {
     "ContainingType": "ClassroomClone.Api.Controllers.QuizzesController",
+    "Method": "GetQuizReport",
+    "RelativePath": "api/Quizzes/{quizId}/report",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "quizId",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.QuizzesController",
     "Method": "GetSubmissions",
     "RelativePath": "api/Quizzes/{quizId}/submissions",
     "HttpMethod": "GET",
@@ -487,5 +924,518 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetAssignmentTemplates",
+    "RelativePath": "api/Templates/assignments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.AssignmentTemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "CreateAssignmentTemplate",
+    "RelativePath": "api/Templates/assignments",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.CreateAssignmentTemplateRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.AssignmentTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetAssignmentTemplate",
+    "RelativePath": "api/Templates/assignments/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.AssignmentTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "UpdateAssignmentTemplate",
+    "RelativePath": "api/Templates/assignments/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.UpdateAssignmentTemplateRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.AssignmentTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "DeleteAssignmentTemplate",
+    "RelativePath": "api/Templates/assignments/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "PublishAssignmentTemplate",
+    "RelativePath": "api/Templates/assignments/{id}/publish",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "RequestApprovalAssignmentTemplate",
+    "RelativePath": "api/Templates/assignments/{id}/request-approval",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetPersonalAssignmentTemplates",
+    "RelativePath": "api/Templates/assignments/personal",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.AssignmentTemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetMaterialTemplates",
+    "RelativePath": "api/Templates/materials",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.MaterialTemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "CreateMaterialTemplate",
+    "RelativePath": "api/Templates/materials",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.CreateMaterialTemplateRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.MaterialTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetMaterialTemplate",
+    "RelativePath": "api/Templates/materials/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.MaterialTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "UpdateMaterialTemplate",
+    "RelativePath": "api/Templates/materials/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.UpdateMaterialTemplateRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.MaterialTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "DeleteMaterialTemplate",
+    "RelativePath": "api/Templates/materials/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "PublishMaterialTemplate",
+    "RelativePath": "api/Templates/materials/{id}/publish",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "RequestApprovalMaterialTemplate",
+    "RelativePath": "api/Templates/materials/{id}/request-approval",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetPersonalMaterialTemplates",
+    "RelativePath": "api/Templates/materials/personal",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.MaterialTemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetQuizTemplates",
+    "RelativePath": "api/Templates/quizzes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.QuizTemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "CreateQuizTemplate",
+    "RelativePath": "api/Templates/quizzes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.CreateQuizTemplateRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.QuizTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetQuizTemplate",
+    "RelativePath": "api/Templates/quizzes/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.QuizTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "UpdateQuizTemplate",
+    "RelativePath": "api/Templates/quizzes/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.UpdateQuizTemplateRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "ClassroomClone.Api.Controllers.QuizTemplateResponse",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "DeleteQuizTemplate",
+    "RelativePath": "api/Templates/quizzes/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "PublishQuizTemplate",
+    "RelativePath": "api/Templates/quizzes/{id}/publish",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "RequestApprovalQuizTemplate",
+    "RelativePath": "api/Templates/quizzes/{id}/request-approval",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "GetPersonalQuizTemplates",
+    "RelativePath": "api/Templates/quizzes/personal",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[ClassroomClone.Api.Controllers.QuizTemplateResponse, ClassroomClone.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   }
 ]

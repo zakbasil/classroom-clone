@@ -2,121 +2,127 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Google Classroom Replica - Modern Soft UI Design System
+/* iSkew PlayGround - Elegant Gold Theme
    All colors MUST be HSL.
+   Light Mode: White, Gold, Black
+   Dark Mode: Black, Gold, White
 */
 
 @layer base {
   :root {
-    /* Core palette - Soft, calming colors */
-    --background: 220 20% 97%;
-    --foreground: 220 20% 15%;
+    /* Light Mode - White, Gold, Black */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 15%;
+    --card-foreground: 0 0% 0%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 15%;
+    --popover-foreground: 0 0% 0%;
 
-    /* Primary - Soft blue-green (Classroom-inspired) */
-    --primary: 174 62% 47%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Rich Gold */
+    --primary: 45 100% 50%;
+    --primary-foreground: 0 0% 0%;
 
-    /* Secondary - Warm amber for accents */
-    --secondary: 38 92% 50%;
+    /* Secondary - Darker gold for accents */
+    --secondary: 45 100% 40%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 14% 92%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 220 14% 94%;
-    --accent-foreground: 220 20% 15%;
+    --accent: 45 100% 95%;
+    --accent-foreground: 45 100% 20%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 88%;
-    --input: 220 13% 88%;
-    --ring: 174 62% 47%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 45 100% 50%;
 
     --radius: 0.75rem;
 
-    /* Custom properties for soft UI */
-    --shadow-soft: 0 4px 20px -2px hsl(220 20% 15% / 0.08);
-    --shadow-card: 0 2px 12px -3px hsl(220 20% 15% / 0.1);
-    --shadow-elevated: 0 8px 30px -4px hsl(220 20% 15% / 0.12);
+    /* Custom properties for elegant UI */
+    --shadow-soft: 0 2px 8px hsl(45 100% 50% / 0.1);
+    --shadow-card: 0 4px 16px hsl(45 100% 50% / 0.12);
+    --shadow-elevated: 0 8px 32px hsl(45 100% 50% / 0.15);
     
-    /* Gradient backgrounds */
-    --gradient-primary: linear-gradient(135deg, hsl(174 62% 47%) 0%, hsl(199 89% 48%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(14 89% 55%) 100%);
-    --gradient-soft: linear-gradient(135deg, hsl(220 20% 97%) 0%, hsl(220 30% 94%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(220 20% 97%) 0%, hsl(210 40% 94%) 50%, hsl(174 30% 95%) 100%);
+    /* Gradient backgrounds - Gold elegance */
+    --gradient-primary: linear-gradient(135deg, hsl(45 100% 50%) 0%, hsl(45 100% 45%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(45 100% 55%) 0%, hsl(45 100% 50%) 100%);
+    --gradient-soft: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(45 100% 98%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(45 100% 98%) 0%, hsl(45 100% 97%) 50%, hsl(0 0% 100%) 100%);
 
-    /* Class card colors */
-    --class-blue: 199 89% 48%;
-    --class-green: 160 84% 39%;
+    /* Class card colors - Keep variety but add gold option */
+    --class-blue: 217 91% 60%;
+    --class-green: 142 76% 36%;
     --class-purple: 262 83% 58%;
     --class-orange: 25 95% 53%;
-    --class-teal: 174 62% 47%;
+    --class-teal: 188 94% 43%;
     --class-pink: 330 81% 60%;
+    --class-gold: 45 100% 50%;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 20% 25%;
-    --sidebar-primary: 174 62% 47%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 20% 15%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 174 62% 47%;
+    --sidebar-foreground: 0 0% 20%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 45 100% 95%;
+    --sidebar-accent-foreground: 45 100% 20%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 45 100% 50%;
   }
 
   .dark {
-    --background: 220 20% 10%;
-    --foreground: 220 14% 95%;
+    /* Dark Mode - Black, Gold, White */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
 
-    --card: 220 20% 13%;
-    --card-foreground: 220 14% 95%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 220 20% 13%;
-    --popover-foreground: 220 14% 95%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 174 62% 52%;
-    --primary-foreground: 220 20% 10%;
+    /* Primary - Bright Gold for dark mode */
+    --primary: 45 100% 55%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 38 80% 55%;
-    --secondary-foreground: 220 20% 10%;
+    /* Secondary - Lighter gold */
+    --secondary: 45 100% 60%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 220 14% 18%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 220 14% 18%;
-    --accent-foreground: 220 14% 95%;
+    --accent: 45 100% 15%;
+    --accent-foreground: 45 100% 90%;
 
-    --destructive: 0 62% 45%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 20%;
-    --input: 220 14% 20%;
-    --ring: 174 62% 52%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 45 100% 55%;
 
-    --shadow-soft: 0 4px 20px -2px hsl(0 0% 0% / 0.3);
-    --shadow-card: 0 2px 12px -3px hsl(0 0% 0% / 0.4);
-    --shadow-elevated: 0 8px 30px -4px hsl(0 0% 0% / 0.5);
+    --shadow-soft: 0 4px 20px -2px hsl(0 0% 0% / 0.5);
+    --shadow-card: 0 2px 12px -3px hsl(0 0% 0% / 0.6);
+    --shadow-elevated: 0 8px 30px -4px hsl(0 0% 0% / 0.7);
 
-    --gradient-primary: linear-gradient(135deg, hsl(174 62% 45%) 0%, hsl(199 80% 45%) 100%);
-    --gradient-warm: linear-gradient(135deg, hsl(38 80% 45%) 0%, hsl(14 80% 50%) 100%);
-    --gradient-soft: linear-gradient(135deg, hsl(220 20% 10%) 0%, hsl(220 25% 13%) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(220 20% 10%) 0%, hsl(220 20% 12%) 50%, hsl(220 20% 11%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(45 100% 55%) 0%, hsl(45 100% 50%) 100%);
+    --gradient-warm: linear-gradient(135deg, hsl(45 100% 60%) 0%, hsl(45 100% 55%) 100%);
+    --gradient-soft: linear-gradient(135deg, hsl(0 0% 4%) 0%, hsl(0 0% 6%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 0%) 0%, hsl(45 100% 5%) 50%, hsl(0 0% 2%) 100%);
 
-    --sidebar-background: 220 20% 12%;
-    --sidebar-foreground: 220 14% 90%;
-    --sidebar-primary: 174 62% 52%;
-    --sidebar-primary-foreground: 220 20% 10%;
-    --sidebar-accent: 220 14% 16%;
-    --sidebar-accent-foreground: 220 14% 95%;
-    --sidebar-border: 220 14% 18%;
-    --sidebar-ring: 174 62% 52%;
+    --sidebar-background: 0 0% 4%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 45 100% 55%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 45 100% 15%;
+    --sidebar-accent-foreground: 45 100% 90%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 45 100% 55%;
   }
 }
 
@@ -157,5 +163,12 @@
 
   .gradient-hero {
     background: var(--gradient-hero);
+  }
+
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 }

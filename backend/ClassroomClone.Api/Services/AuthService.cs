@@ -39,13 +39,15 @@ public class AuthService
             UserId = userId,
             Name = req.Name,
             Email = user.Email,
+            Role = UserRole.Student,
+            IsApproved = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
         _db.Users.Add(user);
         _db.Profiles.Add(profile);
         await _db.SaveChangesAsync(ct);
-        var token = GenerateJwt(userId, user.Email, req.Name);
+        var token = GenerateJwt(userId, user.Email, req.Name, UserRole.Student);
         return new AuthResponse(token, userId.ToString(), user.Email, req.Name);
     }
 
@@ -58,11 +60,12 @@ public class AuthService
             return null;
 
         var name = user.Profile?.Name ?? user.Email;
-        var token = GenerateJwt(user.Id, user.Email, name);
+        var role = user.Profile?.Role ?? UserRole.Student;
+        var token = GenerateJwt(user.Id, user.Email, name, role);
         return new AuthResponse(token, user.Id.ToString(), user.Email, name);
     }
 
-    private string GenerateJwt(Guid userId, string email, string name)
+    private string GenerateJwt(Guid userId, string email, string name, UserRole role)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "ClassroomCloneSecretKeyAtLeast32CharactersLong!"));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -70,7 +73,8 @@ public class AuthService
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, email),
-            new Claim("name", name)
+            new Claim("name", name),
+            new Claim("role", role.ToString())
         };
         var token = new JwtSecurityToken(
             issuer: _config["Jwt:Issuer"],

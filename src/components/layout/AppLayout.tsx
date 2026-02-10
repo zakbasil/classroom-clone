@@ -45,14 +45,14 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="sticky top-0 z-50 h-16 border-b border-border bg-card/80 backdrop-blur-sm px-4 flex items-center justify-between">
+          <header className="sticky top-0 z-50 h-16 border-b border-border bg-card/95 backdrop-blur-sm px-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               <Link to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-                  <GraduationCap className="w-5 h-5 text-primary-foreground" />
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 via-yellow-500 to-amber-600 flex items-center justify-center shadow-md">
+                  <GraduationCap className="w-5 h-5 text-black dark:text-white" />
                 </div>
-                <span className="font-semibold text-foreground hidden sm:inline">Classroom</span>
+                <span className="font-semibold bg-gradient-to-r from-amber-600 to-yellow-600 dark:from-amber-400 dark:to-yellow-400 bg-clip-text text-transparent hidden sm:inline">iSkew PlayGround</span>
               </Link>
             </div>
             
@@ -67,7 +67,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                         <p className="text-xs text-muted-foreground">{profile.email}</p>
                       </div>
                       <Avatar className="w-9 h-9">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                        <AvatarFallback className="bg-gradient-to-br from-amber-100 to-yellow-100 dark:from-amber-900/50 dark:to-yellow-900/50 text-amber-700 dark:text-amber-300 text-sm font-semibold">
                           {getInitials(profile.name)}
                         </AvatarFallback>
                       </Avatar>

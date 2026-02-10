@@ -18,6 +18,11 @@ public class AppDbContext : DbContext
     public DbSet<Announcement> Announcements => Set<Announcement>();
     public DbSet<QuizSubmission> QuizSubmissions => Set<QuizSubmission>();
     public DbSet<QuestionSetSubmission> QuestionSetSubmissions => Set<QuestionSetSubmission>();
+    public DbSet<QuizTemplate> QuizTemplates => Set<QuizTemplate>();
+    public DbSet<AssignmentTemplate> AssignmentTemplates => Set<AssignmentTemplate>();
+    public DbSet<MaterialTemplate> MaterialTemplates => Set<MaterialTemplate>();
+    public DbSet<TeacherSchedule> TeacherSchedules => Set<TeacherSchedule>();
+    public DbSet<TemplateApprovalHistory> TemplateApprovalHistories => Set<TemplateApprovalHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,6 +91,41 @@ public class AppDbContext : DbContext
             e.HasIndex(x => new { x.QuestionSetId, x.UserId }).IsUnique();
             e.HasIndex(x => x.QuestionSetId);
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<QuizTemplate>(e =>
+        {
+            e.HasIndex(t => t.CreatedBy);
+            e.HasOne(t => t.Creator).WithMany().HasForeignKey(t => t.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AssignmentTemplate>(e =>
+        {
+            e.HasIndex(t => t.CreatedBy);
+            e.HasOne(t => t.Creator).WithMany().HasForeignKey(t => t.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<MaterialTemplate>(e =>
+        {
+            e.HasIndex(t => t.CreatedBy);
+            e.HasOne(t => t.Creator).WithMany().HasForeignKey(t => t.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<TeacherSchedule>(e =>
+        {
+            e.HasIndex(s => s.TeacherId);
+            e.HasIndex(s => s.ClassId);
+            e.HasOne(s => s.Teacher).WithMany().HasForeignKey(s => s.TeacherId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(s => s.Class).WithMany().HasForeignKey(s => s.ClassId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<TemplateApprovalHistory>(e =>
+        {
+            e.HasIndex(h => h.TemplateId);
+            e.HasIndex(h => h.CreatedBy);
+            e.HasIndex(h => h.ReviewedBy);
+            e.HasOne(h => h.Creator).WithMany().HasForeignKey(h => h.CreatedBy).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(h => h.Reviewer).WithMany().HasForeignKey(h => h.ReviewedBy).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

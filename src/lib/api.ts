@@ -82,3 +82,35 @@ export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
 export async function apiDelete<T>(path: string): Promise<T> {
   return apiRequest<T>(path, { method: 'DELETE' });
 }
+
+/**
+ * Download a file (e.g., Excel report) from the API
+ */
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const url = `${API_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const token = getToken();
+  const headers: HeadersInit = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    let message = res.statusText;
+    try {
+      const body = await res.json();
+      if (body?.message) message = body.message;
+    } catch {
+      // keep default
+    }
+    throw new Error(message);
+  }
+  
+  const blob = await res.blob();
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(downloadUrl);
+}

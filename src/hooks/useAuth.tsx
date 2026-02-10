@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { apiPost, getToken, setToken, clearToken } from '@/lib/api';
+import { apiPost, apiGet, getToken, setToken, clearToken } from '@/lib/api';
 
 export interface AppUser {
   id: string;
@@ -12,6 +12,8 @@ export interface AppProfile {
   name: string;
   email: string;
   avatar_url: string | null;
+  role?: 'Student' | 'Teacher' | 'Admin';
+  isApproved?: boolean;
 }
 
 interface AuthResponse {
@@ -30,16 +32,19 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  isAdmin: () => boolean;
+  isTeacher: () => boolean;
+  isApproved: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function parseJwtPayload(token: string): { sub?: string; email?: string; name?: string } {
+function parseJwtPayload(token: string): { sub?: string; email?: string; name?: string; role?: string } {
   try {
     const base64 = token.split('.')[1];
     if (!base64) return {};
     const json = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(json) as { sub?: string; email?: string; name?: string };
+    return JSON.parse(json) as { sub?: string; email?: string; name?: string; role?: string };
   } catch {
     return {};
   }
@@ -54,7 +59,34 @@ function profileFromToken(token: string): AppProfile | null {
     name: payload.name ?? payload.email ?? 'User',
     email: payload.email ?? '',
     avatar_url: null,
+    role: payload.role as 'Student' | 'Teacher' | 'Admin' | undefined,
   };
+}
+
+interface ProfileApiResponse {
+  userId: string;
+  name: string;
+  email: string;
+  avatarUrl?: string | null;
+  role: string;
+  isApproved: boolean;
+}
+
+async function fetchProfile(): Promise<AppProfile | null> {
+  try {
+    const profile = await apiGet<ProfileApiResponse>('/api/profiles/me');
+    return {
+      id: profile.userId,
+      user_id: profile.userId,
+      name: profile.name,
+      email: profile.email,
+      avatar_url: profile.avatarUrl ?? null,
+      role: profile.role as 'Student' | 'Teacher' | 'Admin',
+      isApproved: profile.isApproved,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -80,30 +112,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    const token = getToken();
-    if (token) setProfile(profileFromToken(token));
+    const fetched = await fetchProfile();
+    if (fetched) {
+      setProfile(fetched);
+    } else {
+      const token = getToken();
+      if (token) setProfile(profileFromToken(token));
+    }
   };
 
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      const payload = parseJwtPayload(token);
-      if (payload.sub) {
-        setUser({ id: payload.sub, email: payload.email ?? '' });
-        setProfile(profileFromToken(token));
-        setSession({ access_token: token });
-      } else {
-        clearToken();
+    const loadProfile = async () => {
+      const token = getToken();
+      if (token) {
+        const payload = parseJwtPayload(token);
+        if (payload.sub) {
+          setUser({ id: payload.sub, email: payload.email ?? '' });
+          setSession({ access_token: token });
+          // Try to fetch full profile, fallback to token data
+          const profile = await fetchProfile();
+          if (profile) {
+            setProfile(profile);
+          } else {
+            setProfile(profileFromToken(token));
+          }
+        } else {
+          clearToken();
+        }
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+    loadProfile();
   }, []);
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
       const data = await apiPost<AuthResponse>('/api/auth/register', { email, password, name }, true);
       applyToken(data.token);
-      setProfile({ id: data.userId, user_id: data.userId, name: data.name, email: data.email, avatar_url: null });
+      // Fetch full profile with role and approval status
+      const profile = await fetchProfile();
+      if (profile) {
+        setProfile(profile);
+      } else {
+        setProfile({ id: data.userId, user_id: data.userId, name: data.name, email: data.email, avatar_url: null, role: 'Student', isApproved: false });
+      }
       return { error: null };
     } catch (e) {
       return { error: e instanceof Error ? e : new Error('Registration failed') };
@@ -114,7 +166,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await apiPost<AuthResponse>('/api/auth/login', { email, password }, true);
       applyToken(data.token);
-      setProfile({ id: data.userId, user_id: data.userId, name: data.name, email: data.email, avatar_url: null });
+      // Fetch full profile with role and approval status
+      const profile = await fetchProfile();
+      if (profile) {
+        setProfile(profile);
+      } else {
+        setProfile({ id: data.userId, user_id: data.userId, name: data.name, email: data.email, avatar_url: null });
+      }
       return { error: null };
     } catch (e) {
       return { error: e instanceof Error ? e : new Error('Invalid email or password') };
@@ -128,6 +186,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
+  const isAdmin = () => profile?.role === 'Admin';
+  const isTeacher = () => profile?.role === 'Teacher' || isAdmin();
+  const isApproved = () => profile?.isApproved === true || isAdmin();
+
   return (
     <AuthContext.Provider
       value={{
@@ -139,6 +201,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         refreshProfile,
+        isAdmin,
+        isTeacher,
+        isApproved,
       }}
     >
       {children}

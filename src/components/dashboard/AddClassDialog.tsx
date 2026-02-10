@@ -100,8 +100,13 @@ export function AddClassDialog() {
       toast.success(`Class "${classData.name}" created! Stream code: ${classData.streamCode}`);
       resetForm();
       setOpen(false);
-    } catch (error) {
-      toast.error('Failed to create class. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to create class. Please try again.';
+      if (errorMessage.includes('approved')) {
+        toast.error(errorMessage);
+      } else {
+        toast.error('Failed to create class. Please try again.');
+      }
     } finally {
       setIsCreating(false);
     }

@@ -7,8 +7,12 @@ import { ClassworkTab } from '@/components/class/ClassworkTab';
 import { PeopleTab } from '@/components/class/PeopleTab';
 import { MaterialsTab } from '@/components/class/MaterialsTab';
 import { StreamCodeDisplay } from '@/components/class/StreamCodeDisplay';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { downloadFile } from '@/lib/api';
 
 const colorClasses: Record<string, string> = {
   'class-blue': 'bg-class-blue',
@@ -23,9 +27,24 @@ export default function ClassPage() {
   const { classId, tab = 'stream' } = useParams<{ classId: string; tab?: string }>();
   const navigate = useNavigate();
   const { getClassById, isCreatorOfClass, isLoading } = useData();
+  const [isDownloadingClassReport, setIsDownloadingClassReport] = useState(false);
 
   const classData = classId ? getClassById(classId) : undefined;
   const isCreator = classId ? isCreatorOfClass(classId) : false;
+
+  const handleDownloadClassReport = async () => {
+    if (!classId) return;
+    setIsDownloadingClassReport(true);
+    try {
+      await downloadFile(`/api/classes/${classId}/quizzes/report`, `Class_Quiz_Report_${classData?.name.replace(/\s+/g, '_') || 'Report'}.xlsx`);
+      toast.success('Class quiz report downloaded successfully!');
+    } catch (error) {
+      console.error('Error downloading class report:', error);
+      toast.error('Failed to download class quiz report');
+    } finally {
+      setIsDownloadingClassReport(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -66,10 +85,28 @@ export default function ClassPage() {
             )}
           </div>
           
-          {/* Stream Code for Creators */}
+          {/* Stream Code and Download Report for Creators */}
           {isCreator && (
-            <div className="absolute top-4 right-4 max-w-xs">
+            <div className="absolute top-4 right-4 flex flex-col items-end gap-3">
               <StreamCodeDisplay streamCode={classData.streamCode} />
+              <Button
+                variant="outline"
+                onClick={handleDownloadClassReport}
+                disabled={isDownloadingClassReport}
+                className="flex items-center gap-2 bg-white/90 hover:bg-white"
+              >
+                {isDownloadingClassReport ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    Download Class Report
+                  </>
+                )}
+              </Button>
             </div>
           )}
         </div>

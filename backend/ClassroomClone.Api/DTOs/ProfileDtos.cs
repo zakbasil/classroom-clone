@@ -1,3 +1,3 @@
 namespace ClassroomClone.Api.DTOs;
 
-public record ProfileResponse(string UserId, string Name, string Email, string? AvatarUrl);
+public record ProfileResponse(string UserId, string Name, string Email, string? AvatarUrl, string Role, bool IsApproved);

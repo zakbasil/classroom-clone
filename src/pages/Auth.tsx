@@ -68,7 +68,8 @@ export default function Auth() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success('Check your email to verify your account!');
+      toast.success('Account created! Welcome.');
+      navigate('/dashboard');
     }
   };
 
@@ -208,9 +209,6 @@ export default function Auth() {
                     'Create Account'
                   )}
                 </Button>
-                <p className="text-xs text-center text-muted-foreground">
-                  You'll need to verify your email before signing in
-                </p>
               </form>
             </TabsContent>
           </Tabs>

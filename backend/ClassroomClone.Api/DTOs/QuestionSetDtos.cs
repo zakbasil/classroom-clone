@@ -1,0 +1,23 @@
+namespace ClassroomClone.Api.DTOs;
+
+public record CreateQuestionSetRequest(
+    string ClassId,
+    string Title,
+    string? Description,
+    string? Topic,
+    List<QuestionDto> Questions,
+    int TotalPoints,
+    string DueDate
+);
+
+public record QuestionSetResponse(
+    string Id,
+    string ClassId,
+    string Title,
+    string? Description,
+    string? Topic,
+    List<QuestionDto> Questions,
+    int TotalPoints,
+    string DueDate,
+    string CreatedAt
+);

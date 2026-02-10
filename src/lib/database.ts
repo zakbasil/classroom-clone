@@ -1,8 +1,7 @@
-import { supabase } from '@/integrations/supabase/client';
-import type { Json } from '@/integrations/supabase/types';
+import { apiGet, apiPost } from '@/lib/api';
 import type { Question } from '@/types/classwork';
 
-// Types matching database schema
+// Re-export types used by DataContext (snake_case for DB-shaped responses where needed)
 export interface DbClass {
   id: string;
   name: string;
@@ -14,6 +13,21 @@ export interface DbClass {
   stream_code: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ClassDataFromApi {
+  id: string;
+  name: string;
+  section?: string | null;
+  subject?: string | null;
+  room?: string | null;
+  creatorId: string;
+  creatorName: string;
+  creatorAvatar?: string | null;
+  coverColor: string;
+  streamCode: string;
+  studentCount: number;
+  upcomingAssignments: number;
 }
 
 export interface DbAssignment {
@@ -109,190 +123,154 @@ export interface DbProfile {
   updated_at: string;
 }
 
-// Helper to generate stream code
-function generateStreamCode(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 7; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
+// --- Classes (API returns camelCase) ---
 
-// Classes
-export async function fetchUserClasses(userId: string): Promise<DbClass[]> {
-  // Get classes user created
-  const { data: createdClasses, error: createdError } = await supabase
-    .from('classes')
-    .select('*')
-    .eq('creator_id', userId);
-
-  if (createdError) throw createdError;
-
-  // Get classes user is enrolled in
-  const { data: enrollments, error: enrollError } = await supabase
-    .from('enrollments')
-    .select('class_id')
-    .eq('user_id', userId);
-
-  if (enrollError) throw enrollError;
-
-  const enrolledClassIds = enrollments?.map(e => e.class_id) || [];
-  
-  let enrolledClasses: DbClass[] = [];
-  if (enrolledClassIds.length > 0) {
-    const { data, error } = await supabase
-      .from('classes')
-      .select('*')
-      .in('id', enrolledClassIds);
-    
-    if (error) throw error;
-    enrolledClasses = data || [];
-  }
-
-  // Combine and dedupe
-  const allClasses = [...(createdClasses || []), ...enrolledClasses];
-  const uniqueClasses = allClasses.filter((c, i, arr) => 
-    arr.findIndex(x => x.id === c.id) === i
-  );
-  
-  return uniqueClasses as DbClass[];
+export async function fetchUserClasses(_userId: string): Promise<ClassDataFromApi[]> {
+  const list = await apiGet<ClassDataFromApi[]>('/api/classes');
+  return list ?? [];
 }
 
 export async function createClass(
-  userId: string,
+  _userId: string,
   name: string,
   section?: string,
   subject?: string,
   room?: string,
   coverColor: string = 'bg-primary'
-): Promise<DbClass> {
-  const streamCode = generateStreamCode();
-  
-  const { data, error } = await supabase
-    .from('classes')
-    .insert({
-      name,
-      section,
-      subject,
-      room,
-      creator_id: userId,
-      cover_color: coverColor,
-      stream_code: streamCode,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as DbClass;
+): Promise<ClassDataFromApi> {
+  return apiPost<ClassDataFromApi>('/api/classes', {
+    name,
+    section: section ?? null,
+    subject: subject ?? null,
+    room: room ?? null,
+    coverColor: coverColor || undefined,
+  });
 }
 
-export async function getClassByStreamCode(code: string): Promise<DbClass | null> {
-  const { data, error } = await supabase
-    .from('classes')
-    .select('*')
-    .ilike('stream_code', code)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data as DbClass | null;
+export async function getClassByStreamCode(code: string): Promise<{ id: string; name: string; creator_id: string } | null> {
+  try {
+    const c = await apiGet<ClassDataFromApi>(`/api/classes/by-code/${encodeURIComponent(code)}`, true);
+    return c ? { id: c.id, name: c.name, creator_id: c.creatorId } : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getClassById(classId: string): Promise<DbClass | null> {
-  const { data, error } = await supabase
-    .from('classes')
-    .select('*')
-    .eq('id', classId)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data as DbClass | null;
+  try {
+    const c = await apiGet<ClassDataFromApi>(`/api/classes/${classId}`);
+    return c
+      ? {
+          id: c.id,
+          name: c.name,
+          section: c.section ?? null,
+          subject: c.subject ?? null,
+          room: c.room ?? null,
+          creator_id: c.creatorId,
+          cover_color: c.coverColor,
+          stream_code: c.streamCode,
+          created_at: '',
+          updated_at: '',
+        }
+      : null;
+  } catch {
+    return null;
+  }
 }
 
-// Enrollments
-export async function joinClass(userId: string, classId: string): Promise<void> {
-  const { error } = await supabase
-    .from('enrollments')
-    .insert({ user_id: userId, class_id: classId });
-
-  if (error) throw error;
+export async function joinClass(streamCode: string): Promise<{ success: boolean; message: string }> {
+  return apiPost<{ success: boolean; message: string }>('/api/classes/join', { streamCode });
 }
 
-export async function isEnrolled(userId: string, classId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('enrollments')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('class_id', classId)
-    .maybeSingle();
-
-  if (error) throw error;
-  return !!data;
+export async function isEnrolled(_userId: string, _classId: string): Promise<boolean> {
+  return false;
 }
 
-export async function getClassEnrollments(classId: string): Promise<DbEnrollment[]> {
-  const { data, error } = await supabase
-    .from('enrollments')
-    .select('*')
-    .eq('class_id', classId);
-
-  if (error) throw error;
-  return data as DbEnrollment[];
+export async function getClassEnrollments(classId: string): Promise<{ user_id: string }[]> {
+  const profiles = await apiGet<{ userId: string }[]>(`/api/enrollments/class/${classId}`);
+  return (profiles ?? []).map((p) => ({ user_id: p.userId }));
 }
 
-// Profiles
+/** Returns class members (creator + enrolled) with profile info for People tab. */
+export async function getClassMemberProfiles(classId: string): Promise<Array<{ userId: string; name: string; email: string; avatarUrl?: string | null }>> {
+  const list = await apiGet<Array<{ userId: string; name: string; email: string; avatarUrl?: string | null }>>(`/api/enrollments/class/${classId}`);
+  return list ?? [];
+}
+
+// --- Profiles ---
+
 export async function getProfilesByIds(userIds: string[]): Promise<DbProfile[]> {
   if (userIds.length === 0) return [];
-  
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .in('user_id', userIds);
-
-  if (error) throw error;
-  return data as DbProfile[];
+  const list = await apiPost<{ userId: string; name: string; email: string; avatarUrl?: string | null }[]>(
+    '/api/profiles/by-ids',
+    userIds
+  );
+  return (list ?? []).map((p) => ({
+    id: p.userId,
+    user_id: p.userId,
+    name: p.name,
+    email: p.email,
+    avatar_url: p.avatarUrl ?? null,
+    created_at: '',
+    updated_at: '',
+  }));
 }
 
-// Assignments
+// --- Assignments ---
+
 export async function getAssignmentsByClass(classId: string): Promise<DbAssignment[]> {
-  const { data, error } = await supabase
-    .from('assignments')
-    .select('*')
-    .eq('class_id', classId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data as DbAssignment[];
+  const list = await apiGet<Array<Record<string, unknown>>>(`/api/assignments/class/${classId}`);
+  return (list ?? []).map((a) => ({
+    id: String(a.id),
+    class_id: String(a.classId),
+    title: String(a.title),
+    description: a.description != null ? String(a.description) : null,
+    points: Number(a.points),
+    due_date: String(a.dueDate),
+    created_at: String(a.createdAt),
+    topic: a.topic != null ? String(a.topic) : null,
+    type: (a.type as DbAssignment['type']) ?? 'assignment',
+    quiz_id: a.quizId != null ? String(a.quizId) : null,
+    question_set_id: a.questionSetId != null ? String(a.questionSetId) : null,
+    updated_at: String(a.createdAt),
+  }));
 }
 
-// Quizzes
-export async function getQuizzesByClass(classId: string): Promise<DbQuiz[]> {
-  const { data, error } = await supabase
-    .from('quizzes')
-    .select('*')
-    .eq('class_id', classId);
-
-  if (error) throw error;
-  return (data || []).map(q => ({
-    ...q,
-    questions: q.questions as unknown as Question[],
-  })) as DbQuiz[];
-}
+// --- Quizzes ---
 
 export async function getQuizById(quizId: string): Promise<DbQuiz | null> {
-  const { data, error } = await supabase
-    .from('quizzes')
-    .select('*')
-    .eq('id', quizId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) return null;
-  
-  return {
-    ...data,
-    questions: data.questions as unknown as Question[],
-  } as DbQuiz;
+  try {
+    const q = await apiGet<{
+      id: string;
+      classId: string;
+      title: string;
+      description?: string | null;
+      topic?: string | null;
+      questions: Question[];
+      totalPoints: number;
+      dueDate: string;
+      createdAt: string;
+      requireFullscreen: boolean;
+      timeLimit?: number | null;
+    }>(`/api/quizzes/${quizId}`);
+    if (!q) return null;
+    return {
+      id: q.id,
+      class_id: q.classId,
+      title: q.title,
+      description: q.description ?? null,
+      topic: q.topic ?? null,
+      questions: q.questions,
+      total_points: q.totalPoints,
+      due_date: q.dueDate,
+      require_fullscreen: q.requireFullscreen,
+      time_limit: q.timeLimit ?? null,
+      created_at: q.createdAt,
+      updated_at: q.createdAt,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function createQuiz(
@@ -306,74 +284,121 @@ export async function createQuiz(
   requireFullscreen: boolean,
   timeLimit: number | null
 ): Promise<DbQuiz> {
-  const { data: quiz, error: quizError } = await supabase
-    .from('quizzes')
-    .insert([{
-      class_id: classId,
-      title,
-      description,
-      topic,
-      questions: JSON.parse(JSON.stringify(questions)) as Json,
-      total_points: totalPoints,
-      due_date: dueDate,
-      require_fullscreen: requireFullscreen,
-      time_limit: timeLimit,
-    }])
-    .select()
-    .single();
-
-  if (quizError) throw quizError;
-
-  // Create corresponding assignment
-  const { error: assignError } = await supabase
-    .from('assignments')
-    .insert({
-      class_id: classId,
-      title,
-      description,
-      points: totalPoints,
-      due_date: dueDate,
-      topic,
-      type: 'quiz',
-      quiz_id: quiz.id,
-    });
-
-  if (assignError) throw assignError;
-
+  const q = await apiPost<{
+    id: string;
+    classId: string;
+    title: string;
+    description?: string | null;
+    topic?: string | null;
+    questions: Question[];
+    totalPoints: number;
+    dueDate: string;
+    createdAt: string;
+    requireFullscreen: boolean;
+    timeLimit?: number | null;
+  }>('/api/quizzes', {
+    classId,
+    title,
+    description: description ?? undefined,
+    topic: topic ?? undefined,
+    questions,
+    totalPoints,
+    dueDate,
+    requireFullscreen,
+    timeLimit: timeLimit ?? undefined,
+  });
   return {
-    ...quiz,
-    questions: quiz.questions as unknown as Question[],
-  } as DbQuiz;
+    id: q.id,
+    class_id: q.classId,
+    title: q.title,
+    description: q.description ?? null,
+    topic: q.topic ?? null,
+    questions: q.questions,
+    total_points: q.totalPoints,
+    due_date: q.dueDate,
+    require_fullscreen: q.requireFullscreen,
+    time_limit: q.timeLimit ?? null,
+    created_at: q.createdAt,
+    updated_at: q.createdAt,
+  };
 }
 
-// Question Sets
-export async function getQuestionSetsByClass(classId: string): Promise<DbQuestionSet[]> {
-  const { data, error } = await supabase
-    .from('question_sets')
-    .select('*')
-    .eq('class_id', classId);
-
-  if (error) throw error;
-  return (data || []).map(q => ({
-    ...q,
-    questions: q.questions as unknown as Question[],
-  })) as DbQuestionSet[];
+export async function getQuizSubmissionsByQuiz(quizId: string): Promise<DbQuizSubmission[]> {
+  const list = await apiGet<Array<{ id: string; studentId: string; submittedAt: string; score: number; totalPoints: number; status: string; timeTaken?: number | null }>>(
+    `/api/quizzes/${quizId}/submissions`
+  );
+  return (list ?? []).map((s) => ({
+    id: s.id,
+    quiz_id: quizId,
+    user_id: s.studentId,
+    answers: {},
+    score: s.score,
+    time_taken: s.timeTaken ?? null,
+    started_at: s.submittedAt,
+    submitted_at: s.submittedAt,
+    created_at: s.submittedAt,
+  }));
 }
+
+export async function getMyQuizSubmission(_quizId: string, _userId: string): Promise<DbQuizSubmission | null> {
+  return null;
+}
+
+export async function upsertQuizSubmission(
+  quizId: string,
+  _userId: string,
+  answers: Record<string, string>,
+  score: number,
+  timeTaken: number | null,
+  submitted: boolean
+): Promise<DbQuizSubmission> {
+  if (submitted) {
+    await apiPost(`/api/quizzes/${quizId}/submit`, { answers, score, timeTaken: timeTaken ?? undefined });
+  }
+  return {
+    id: '',
+    quiz_id: quizId,
+    user_id: '',
+    answers,
+    score,
+    time_taken: timeTaken,
+    started_at: new Date().toISOString(),
+    submitted_at: submitted ? new Date().toISOString() : null,
+    created_at: new Date().toISOString(),
+  };
+}
+
+// --- Question Sets ---
 
 export async function getQuestionSetById(id: string): Promise<DbQuestionSet | null> {
-  const { data, error } = await supabase
-    .from('question_sets')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) return null;
-  
-  return {
-    ...data,
-    questions: data.questions as unknown as Question[],
-  } as DbQuestionSet;
+  try {
+    const q = await apiGet<{
+      id: string;
+      classId: string;
+      title: string;
+      description?: string | null;
+      topic?: string | null;
+      questions: Question[];
+      totalPoints: number;
+      dueDate: string;
+      createdAt: string;
+    }>(`/api/questionsets/${id}`);
+    if (!q) return null;
+    return {
+      id: q.id,
+      class_id: q.classId,
+      title: q.title,
+      description: q.description ?? null,
+      topic: q.topic ?? null,
+      questions: q.questions,
+      total_points: q.totalPoints,
+      due_date: q.dueDate,
+      created_at: q.createdAt,
+      updated_at: q.createdAt,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function createQuestionSet(
@@ -385,57 +410,55 @@ export async function createQuestionSet(
   totalPoints: number,
   dueDate: string
 ): Promise<DbQuestionSet> {
-  const { data: qs, error: qsError } = await supabase
-    .from('question_sets')
-    .insert([{
-      class_id: classId,
-      title,
-      description,
-      topic,
-      questions: JSON.parse(JSON.stringify(questions)) as Json,
-      total_points: totalPoints,
-      due_date: dueDate,
-    }])
-    .select()
-    .single();
-
-  if (qsError) throw qsError;
-
-  // Create corresponding assignment
-  const { error: assignError } = await supabase
-    .from('assignments')
-    .insert({
-      class_id: classId,
-      title,
-      description,
-      points: totalPoints,
-      due_date: dueDate,
-      topic,
-      type: 'questions',
-      question_set_id: qs.id,
-    });
-
-  if (assignError) throw assignError;
-
+  const q = await apiPost<{
+    id: string;
+    classId: string;
+    title: string;
+    description?: string | null;
+    topic?: string | null;
+    questions: Question[];
+    totalPoints: number;
+    dueDate: string;
+    createdAt: string;
+  }>('/api/questionsets', {
+    classId,
+    title,
+    description: description ?? undefined,
+    topic: topic ?? undefined,
+    questions,
+    totalPoints,
+    dueDate,
+  });
   return {
-    ...qs,
-    questions: qs.questions as unknown as Question[],
-  } as DbQuestionSet;
+    id: q.id,
+    class_id: q.classId,
+    title: q.title,
+    description: q.description ?? null,
+    topic: q.topic ?? null,
+    questions: q.questions,
+    total_points: q.totalPoints,
+    due_date: q.dueDate,
+    created_at: q.createdAt,
+    updated_at: q.createdAt,
+  };
 }
 
-// Materials
-export async function getMaterialsByClass(classId: string): Promise<DbMaterial[]> {
-  const { data, error } = await supabase
-    .from('materials')
-    .select('*')
-    .eq('class_id', classId)
-    .order('created_at', { ascending: false });
+// --- Materials ---
 
-  if (error) throw error;
-  return (data || []).map(m => ({
-    ...m,
-    attachments: m.attachments as { name: string; type: string; url: string }[],
-  })) as DbMaterial[];
+export async function getMaterialsByClass(classId: string): Promise<DbMaterial[]> {
+  const list = await apiGet<Array<{ id: string; classId: string; title: string; description?: string | null; topic?: string | null; createdAt: string; attachments: { name: string; type: string; url: string }[] }>>(
+    `/api/materials/class/${classId}`
+  );
+  return (list ?? []).map((m) => ({
+    id: m.id,
+    class_id: m.classId,
+    title: m.title,
+    description: m.description ?? null,
+    topic: m.topic ?? null,
+    attachments: m.attachments ?? [],
+    created_at: m.createdAt,
+    updated_at: m.createdAt,
+  }));
 }
 
 export async function createMaterial(
@@ -444,155 +467,77 @@ export async function createMaterial(
   description: string | null,
   topic: string | null
 ): Promise<DbMaterial> {
-  const { data, error } = await supabase
-    .from('materials')
-    .insert({
-      class_id: classId,
-      title,
-      description,
-      topic,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
+  const m = await apiPost<{
+    id: string;
+    classId: string;
+    title: string;
+    description?: string | null;
+    topic?: string | null;
+    createdAt: string;
+    attachments: { name: string; type: string; url: string }[];
+  }>('/api/materials', {
+    classId,
+    title,
+    description: description ?? undefined,
+    topic: topic ?? undefined,
+  });
   return {
-    ...data,
-    attachments: data.attachments as { name: string; type: string; url: string }[],
-  } as DbMaterial;
+    id: m.id,
+    class_id: m.classId,
+    title: m.title,
+    description: m.description ?? null,
+    topic: m.topic ?? null,
+    attachments: m.attachments ?? [],
+    created_at: m.createdAt,
+    updated_at: m.createdAt,
+  };
 }
 
-// Announcements
+// --- Announcements ---
+
 export async function getAnnouncementsByClass(classId: string): Promise<DbAnnouncement[]> {
-  const { data, error } = await supabase
-    .from('announcements')
-    .select('*')
-    .eq('class_id', classId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return (data || []).map(a => ({
-    ...a,
-    attachments: a.attachments as { name: string; type: string; url: string }[],
-  })) as DbAnnouncement[];
+  const list = await apiGet<Array<{ id: string; classId: string; authorId: string; authorName: string; content: string; createdAt: string; attachments?: { name: string; type: string; url: string }[] }>>(
+    `/api/announcements/class/${classId}`
+  );
+  return (list ?? []).map((a) => ({
+    id: a.id,
+    class_id: a.classId,
+    author_id: a.authorId,
+    content: a.content,
+    attachments: a.attachments ?? [],
+    created_at: a.createdAt,
+    updated_at: a.createdAt,
+  }));
 }
 
-export async function createAnnouncement(
-  classId: string,
-  authorId: string,
-  content: string
-): Promise<DbAnnouncement> {
-  const { data, error } = await supabase
-    .from('announcements')
-    .insert({
-      class_id: classId,
-      author_id: authorId,
-      content,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
+export async function createAnnouncement(classId: string, _authorId: string, content: string): Promise<DbAnnouncement> {
+  const a = await apiPost<{ id: string; classId: string; authorId: string; content: string; createdAt: string; attachments?: { name: string; type: string; url: string }[] }>(
+    '/api/announcements',
+    { classId, content }
+  );
   return {
-    ...data,
-    attachments: data.attachments as { name: string; type: string; url: string }[],
-  } as DbAnnouncement;
+    id: a.id,
+    class_id: a.classId,
+    author_id: a.authorId,
+    content: a.content,
+    attachments: a.attachments ?? [],
+    created_at: a.createdAt,
+    updated_at: a.createdAt,
+  };
 }
 
-// Quiz Submissions
-export async function getQuizSubmissionsByQuiz(quizId: string): Promise<DbQuizSubmission[]> {
-  const { data, error } = await supabase
-    .from('quiz_submissions')
-    .select('*')
-    .eq('quiz_id', quizId)
-    .order('score', { ascending: false });
+// --- Question Set Submissions (if used elsewhere) ---
 
-  if (error) throw error;
-  return (data || []).map(s => ({
-    ...s,
-    answers: s.answers as Record<string, string>,
-  })) as DbQuizSubmission[];
-}
-
-export async function getMyQuizSubmission(quizId: string, userId: string): Promise<DbQuizSubmission | null> {
-  const { data, error } = await supabase
-    .from('quiz_submissions')
-    .select('*')
-    .eq('quiz_id', quizId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) return null;
-  
-  return {
-    ...data,
-    answers: data.answers as Record<string, string>,
-  } as DbQuizSubmission;
-}
-
-export async function upsertQuizSubmission(
-  quizId: string,
-  userId: string,
-  answers: Record<string, string>,
-  score: number,
-  timeTaken: number | null,
-  submitted: boolean
-): Promise<DbQuizSubmission> {
-  const { data, error } = await supabase
-    .from('quiz_submissions')
-    .upsert([{
-      quiz_id: quizId,
-      user_id: userId,
-      answers: JSON.parse(JSON.stringify(answers)) as Json,
-      score,
-      time_taken: timeTaken,
-      submitted_at: submitted ? new Date().toISOString() : null,
-    }], {
-      onConflict: 'quiz_id,user_id',
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return {
-    ...data,
-    answers: data.answers as Record<string, string>,
-  } as DbQuizSubmission;
-}
-
-// Question Set Submissions
-export async function getQuestionSetSubmissions(questionSetId: string) {
-  const { data, error } = await supabase
-    .from('question_set_submissions')
-    .select('*')
-    .eq('question_set_id', questionSetId);
-
-  if (error) throw error;
-  return data;
+export async function getQuestionSetSubmissions(_questionSetId: string) {
+  return [];
 }
 
 export async function upsertQuestionSetSubmission(
-  questionSetId: string,
-  userId: string,
-  answers: Record<string, string>,
-  timeTaken: number | null,
-  submitted: boolean
+  _questionSetId: string,
+  _userId: string,
+  _answers: Record<string, string>,
+  _timeTaken: number | null,
+  _submitted: boolean
 ) {
-  const { data, error } = await supabase
-    .from('question_set_submissions')
-    .upsert([{
-      question_set_id: questionSetId,
-      user_id: userId,
-      answers: JSON.parse(JSON.stringify(answers)) as Json,
-      time_taken: timeTaken,
-      submitted_at: submitted ? new Date().toISOString() : null,
-    }], {
-      onConflict: 'question_set_id,user_id',
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+  return null;
 }

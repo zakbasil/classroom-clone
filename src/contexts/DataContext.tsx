@@ -171,37 +171,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setProfileCache(newCache);
   }, [profileCache]);
 
-  // Convert DB class to app ClassData
-  const toClassData = useCallback(async (dbClass: db.DbClass): Promise<ClassData> => {
-    // Get creator profile
-    if (!profileCache[dbClass.creator_id]) {
-      await fetchProfilesForIds([dbClass.creator_id]);
-    }
-    const creatorProfile = profileCache[dbClass.creator_id];
-    
-    // Get enrollments count
-    const enrollments = await db.getClassEnrollments(dbClass.id);
-    
-    // Get assignments count (due in future)
-    const assignments = await db.getAssignmentsByClass(dbClass.id);
-    const upcomingCount = assignments.filter(a => new Date(a.due_date) > new Date()).length;
-
-    return {
-      id: dbClass.id,
-      name: dbClass.name,
-      section: dbClass.section || undefined,
-      subject: dbClass.subject || undefined,
-      room: dbClass.room || undefined,
-      creatorId: dbClass.creator_id,
-      creatorName: creatorProfile?.name || 'Unknown',
-      creatorAvatar: creatorProfile?.avatar_url || undefined,
-      coverColor: dbClass.cover_color,
-      streamCode: dbClass.stream_code,
-      studentCount: enrollments.length,
-      upcomingAssignments: upcomingCount,
-    };
-  }, [profileCache, fetchProfilesForIds]);
-
   const refreshClasses = useCallback(async () => {
     if (!user) {
       setClasses([]);
@@ -213,21 +182,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setError(null);
     
     try {
-      const dbClasses = await db.fetchUserClasses(user.id);
-      
-      // Fetch all creator profiles first
-      const creatorIds = [...new Set(dbClasses.map(c => c.creator_id))];
-      await fetchProfilesForIds(creatorIds);
-      
-      const classData = await Promise.all(dbClasses.map(toClassData));
-      setClasses(classData);
+      const list = await db.fetchUserClasses(user.id);
+      setClasses(list as ClassData[]);
     } catch (e) {
       console.error('Error fetching classes:', e);
       setError('Failed to load classes');
     } finally {
       setIsLoading(false);
     }
-  }, [user, toClassData, fetchProfilesForIds]);
+  }, [user]);
 
   useEffect(() => {
     refreshClasses();
@@ -242,8 +205,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   ): Promise<ClassData> => {
     if (!user) throw new Error('Not authenticated');
     
-    const dbClass = await db.createClass(user.id, name, section, subject, room, coverColor);
-    const classData = await toClassData(dbClass);
+    const classData = await db.createClass(user.id, name, section, subject, room, coverColor) as ClassData;
     setClasses(prev => [...prev, classData]);
     return classData;
   };
@@ -252,25 +214,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!user) return { success: false, message: 'Not authenticated' };
     
     try {
-      const classToJoin = await db.getClassByStreamCode(streamCode);
-      
-      if (!classToJoin) {
-        return { success: false, message: 'Invalid stream code. Please check and try again.' };
-      }
-      
-      if (classToJoin.creator_id === user.id) {
-        return { success: false, message: 'You cannot join a class you created.' };
-      }
-      
-      const alreadyEnrolled = await db.isEnrolled(user.id, classToJoin.id);
-      if (alreadyEnrolled) {
-        return { success: false, message: 'You are already enrolled in this class.' };
-      }
-      
-      await db.joinClass(user.id, classToJoin.id);
-      await refreshClasses();
-      
-      return { success: true, message: `Successfully joined "${classToJoin.name}"!` };
+      const result = await db.joinClass(streamCode);
+      if (result.success) await refreshClasses();
+      return result;
     } catch (e) {
       console.error('Error joining class:', e);
       return { success: false, message: 'Failed to join class. Please try again.' };
@@ -510,17 +456,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const classData = getClassById(classId);
     if (!classData) return [];
     
-    const enrollments = await db.getClassEnrollments(classId);
-    const memberIds = [classData.creatorId, ...enrollments.map(e => e.user_id)];
-    
-    await fetchProfilesForIds(memberIds);
-    
-    return memberIds.map(id => ({
-      id,
-      name: profileCache[id]?.name || 'Unknown',
-      email: profileCache[id]?.email || '',
-      avatar: profileCache[id]?.avatar_url || undefined,
-      isCreator: id === classData.creatorId,
+    const members = await db.getClassMemberProfiles(classId);
+    return members.map(m => ({
+      id: m.userId,
+      name: m.name,
+      email: m.email,
+      avatar: m.avatarUrl ?? undefined,
+      isCreator: m.userId === classData.creatorId,
     }));
   };
 

@@ -1,8 +1,12 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
+import { apiPost, getToken, setToken, clearToken } from '@/lib/api';
 
-interface Profile {
+export interface AppUser {
+  id: string;
+  email: string;
+}
+
+export interface AppProfile {
   id: string;
   user_id: string;
   name: string;
@@ -10,10 +14,17 @@ interface Profile {
   avatar_url: string | null;
 }
 
+interface AuthResponse {
+  token: string;
+  userId: string;
+  email: string;
+  name: string;
+}
+
 interface AuthContextType {
-  user: User | null;
-  profile: Profile | null;
-  session: Session | null;
+  user: AppUser | null;
+  profile: AppProfile | null;
+  session: { access_token: string } | null;
   isLoading: boolean;
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -23,91 +34,95 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function parseJwtPayload(token: string): { sub?: string; email?: string; name?: string } {
+  try {
+    const base64 = token.split('.')[1];
+    if (!base64) return {};
+    const json = atob(base64.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json) as { sub?: string; email?: string; name?: string };
+  } catch {
+    return {};
+  }
+}
+
+function profileFromToken(token: string): AppProfile | null {
+  const payload = parseJwtPayload(token);
+  if (!payload.sub) return null;
+  return {
+    id: payload.sub,
+    user_id: payload.sub,
+    name: payload.name ?? payload.email ?? 'User',
+    email: payload.email ?? '',
+    avatar_url: null,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
+  const [profile, setProfile] = useState<AppProfile | null>(null);
+  const [session, setSession] = useState<{ access_token: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return null;
+  const applyToken = (token: string | null) => {
+    if (!token) {
+      setUser(null);
+      setProfile(null);
+      setSession(null);
+      return;
     }
-    return data as Profile | null;
+    setToken(token);
+    const payload = parseJwtPayload(token);
+    if (payload.sub) {
+      setUser({ id: payload.sub, email: payload.email ?? '' });
+      setProfile(profileFromToken(token));
+      setSession({ access_token: token });
+    }
   };
 
   const refreshProfile = async () => {
-    if (user) {
-      const profileData = await fetchProfile(user.id);
-      setProfile(profileData);
-    }
+    const token = getToken();
+    if (token) setProfile(profileFromToken(token));
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Defer profile fetch to avoid blocking
-          setTimeout(async () => {
-            const profileData = await fetchProfile(session.user.id);
-            setProfile(profileData);
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-        
-        setIsLoading(false);
+    const token = getToken();
+    if (token) {
+      const payload = parseJwtPayload(token);
+      if (payload.sub) {
+        setUser({ id: payload.sub, email: payload.email ?? '' });
+        setProfile(profileFromToken(token));
+        setSession({ access_token: token });
+      } else {
+        clearToken();
       }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id).then(setProfile);
-      }
-      
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    }
+    setIsLoading(false);
   }, []);
 
   const signUp = async (email: string, password: string, name: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { name },
-      },
-    });
-    return { error };
+    try {
+      const data = await apiPost<AuthResponse>('/api/auth/register', { email, password, name }, true);
+      applyToken(data.token);
+      setProfile({ id: data.userId, user_id: data.userId, name: data.name, email: data.email, avatar_url: null });
+      return { error: null };
+    } catch (e) {
+      return { error: e instanceof Error ? e : new Error('Registration failed') };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const data = await apiPost<AuthResponse>('/api/auth/login', { email, password }, true);
+      applyToken(data.token);
+      setProfile({ id: data.userId, user_id: data.userId, name: data.name, email: data.email, avatar_url: null });
+      return { error: null };
+    } catch (e) {
+      return { error: e instanceof Error ? e : new Error('Invalid email or password') };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    clearToken();
     setUser(null);
     setProfile(null);
     setSession(null);

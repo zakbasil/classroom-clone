@@ -1,0 +1,19 @@
+namespace ClassroomClone.Api.Models;
+
+public class QuestionSet
+{
+    public Guid Id { get; set; }
+    public Guid ClassId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Topic { get; set; }
+    /// <summary>JSON array of questions.</summary>
+    public string QuestionsJson { get; set; } = "[]";
+    public int TotalPoints { get; set; }
+    public DateTime DueDate { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    public Class? Class { get; set; }
+    public ICollection<QuestionSetSubmission> Submissions { get; set; } = new List<QuestionSetSubmission>();
+}

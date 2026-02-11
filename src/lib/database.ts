@@ -776,6 +776,19 @@ export async function publishMaterialTemplate(id: string): Promise<void> {
   return apiPost(`/api/templates/materials/${id}/publish`);
 }
 
+// Unpublish Templates
+export async function unpublishQuizTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/quizzes/${id}/unpublish`);
+}
+
+export async function unpublishAssignmentTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/assignments/${id}/unpublish`);
+}
+
+export async function unpublishMaterialTemplate(id: string): Promise<void> {
+  return apiPost(`/api/templates/materials/${id}/unpublish`);
+}
+
 // Admin Template Approval
 export interface TemplateForApproval {
   id: string;

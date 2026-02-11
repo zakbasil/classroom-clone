@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Plus, Trash2, Edit, CheckCircle, Upload } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit, CheckCircle, Upload, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   getQuizTemplates,
@@ -10,6 +10,7 @@ import {
   getQuizTemplate,
   deleteQuizTemplate,
   publishQuizTemplate,
+  unpublishQuizTemplate,
   requestApprovalQuizTemplate,
   type QuizTemplate,
 } from '@/lib/database';
@@ -18,9 +19,10 @@ import { CreateQuizTemplateDialog } from './CreateQuizTemplateDialog';
 import { EditQuizTemplateDialog } from './EditQuizTemplateDialog';
 
 export function QuizTemplatesTab() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, userId } = useAuth();
   const [approvedTemplates, setApprovedTemplates] = useState<QuizTemplate[]>([]);
   const [personalTemplates, setPersonalTemplates] = useState<QuizTemplate[]>([]);
+  const [allPersonalTemplates, setAllPersonalTemplates] = useState<QuizTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<QuizTemplate | null>(null);
@@ -39,11 +41,11 @@ export function QuizTemplatesTab() {
       
       // Separate published templates (available to all) and personal templates
       const published = allTemplates.filter(t => t.status === 'Published');
-      const personalIds = new Set(personal.map(t => t.id));
       const personalTemplatesList = personal.filter(t => t.status !== 'Published');
       
       setApprovedTemplates(published);
       setPersonalTemplates(personalTemplatesList);
+      setAllPersonalTemplates(personal); // Keep all personal templates including published ones
     } catch (error) {
       console.error('Error loading templates:', error);
       toast.error('Failed to load templates');
@@ -97,6 +99,17 @@ export function QuizTemplatesTab() {
     }
   };
 
+  const handleUnpublish = async (templateId: string) => {
+    try {
+      await unpublishQuizTemplate(templateId);
+      toast.success('Template unpublished successfully');
+      loadTemplates();
+    } catch (error) {
+      console.error('Error unpublishing template:', error);
+      toast.error('Failed to unpublish template');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -144,6 +157,17 @@ export function QuizTemplatesTab() {
                 <Upload className="w-4 h-4" />
               </Button>
             )}
+            {isPersonal && template.status === 'Published' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleUnpublish(template.id)}
+                className="text-orange-600"
+                title="Unpublish Template"
+              >
+                <XCircle className="w-4 h-4" />
+              </Button>
+            )}
             {isPersonal && (template.status === 'Draft' || template.status === 'Rejected') && (
               <Button
                 variant="outline"
@@ -155,12 +179,13 @@ export function QuizTemplatesTab() {
                 <Upload className="w-4 h-4" />
               </Button>
             )}
-            {isPersonal && (
+            {(isPersonal || template.status === 'Published') && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleEdit(template)}
                 className="text-primary"
+                title={template.status === 'Published' ? 'Edit (will unpublish)' : 'Edit'}
               >
                 <Edit className="w-4 h-4" />
               </Button>
@@ -218,9 +243,11 @@ export function QuizTemplatesTab() {
             Published Templates (Available to All Teachers)
           </h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {approvedTemplates.map((template) => (
-              <TemplateCard key={template.id} template={template} isPersonal={false} />
-            ))}
+            {approvedTemplates.map((template) => {
+              // Show edit/unpublish buttons for published templates if user is creator
+              const isCreator = allPersonalTemplates.some(t => t.id === template.id);
+              return <TemplateCard key={template.id} template={template} isPersonal={isCreator} />;
+            })}
           </div>
         </div>
       )}

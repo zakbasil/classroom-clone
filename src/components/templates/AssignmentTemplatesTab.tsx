@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Plus, Trash2, Edit, CheckCircle, Upload } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit, CheckCircle, Upload, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   getAssignmentTemplates,
@@ -16,6 +16,7 @@ import {
   updateAssignmentTemplate,
   deleteAssignmentTemplate,
   publishAssignmentTemplate,
+  unpublishAssignmentTemplate,
   requestApprovalAssignmentTemplate,
   type AssignmentTemplate,
 } from '@/lib/database';
@@ -33,6 +34,7 @@ export function AssignmentTemplatesTab() {
   const { isAdmin } = useAuth();
   const [approvedTemplates, setApprovedTemplates] = useState<AssignmentTemplate[]>([]);
   const [personalTemplates, setPersonalTemplates] = useState<AssignmentTemplate[]>([]);
+  const [allPersonalTemplates, setAllPersonalTemplates] = useState<AssignmentTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<AssignmentTemplate | null>(null);
@@ -61,6 +63,7 @@ export function AssignmentTemplatesTab() {
       
       setApprovedTemplates(published);
       setPersonalTemplates(personalTemplatesList);
+      setAllPersonalTemplates(personal); // Keep all personal templates including published ones
     } catch (error) {
       console.error('Error loading templates:', error);
       toast.error('Failed to load templates');
@@ -182,6 +185,17 @@ export function AssignmentTemplatesTab() {
     }
   };
 
+  const handleUnpublish = async (templateId: string) => {
+    try {
+      await unpublishAssignmentTemplate(templateId);
+      toast.success('Template unpublished successfully');
+      loadTemplates();
+    } catch (error) {
+      console.error('Error unpublishing template:', error);
+      toast.error('Failed to unpublish template');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -229,6 +243,17 @@ export function AssignmentTemplatesTab() {
                 <Upload className="w-4 h-4" />
               </Button>
             )}
+            {isPersonal && template.status === 'Published' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleUnpublish(template.id)}
+                className="text-orange-600"
+                title="Unpublish Template"
+              >
+                <XCircle className="w-4 h-4" />
+              </Button>
+            )}
             {isPersonal && (template.status === 'Draft' || template.status === 'Rejected') && (
               <Button
                 variant="outline"
@@ -240,12 +265,13 @@ export function AssignmentTemplatesTab() {
                 <Upload className="w-4 h-4" />
               </Button>
             )}
-            {isPersonal && (
+            {(isPersonal || template.status === 'Published') && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => handleEdit(template)}
                 className="text-primary"
+                title={template.status === 'Published' ? 'Edit (will unpublish)' : 'Edit'}
               >
                 <Edit className="w-4 h-4" />
               </Button>
@@ -370,9 +396,11 @@ export function AssignmentTemplatesTab() {
             Published Templates (Available to All Teachers)
           </h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {approvedTemplates.map((template) => (
-              <TemplateCard key={template.id} template={template} isPersonal={false} />
-            ))}
+            {approvedTemplates.map((template) => {
+              // Show edit/unpublish buttons for published templates if user is creator
+              const isCreator = allPersonalTemplates.some(t => t.id === template.id);
+              return <TemplateCard key={template.id} template={template} isPersonal={isCreator} />;
+            })}
           </div>
         </div>
       )}

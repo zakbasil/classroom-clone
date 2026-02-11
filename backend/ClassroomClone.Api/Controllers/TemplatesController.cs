@@ -208,6 +208,36 @@ public class TemplatesController : ControllerBase
         return Ok(new { message = "Template published successfully" });
     }
 
+    [HttpPost("quizzes/{id:guid}/unpublish")]
+    public async Task<IActionResult> UnpublishQuizTemplate(Guid id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var template = await _db.QuizTemplates.FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (template == null) return NotFound();
+
+        // Check if user is creator or admin
+        var profile = await _db.Profiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        var isAdmin = profile?.Role == Admin;
+        var isCreator = template.CreatedBy == userId;
+
+        if (!isAdmin && !isCreator) return Forbid();
+
+        // Only published templates can be unpublished
+        if (template.Status != TemplateStatus.Published)
+        {
+            return BadRequest(new { message = "Only published templates can be unpublished" });
+        }
+
+        // Unpublish: change status back to Approved
+        template.Status = TemplateStatus.Approved;
+        template.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { message = "Template unpublished successfully" });
+    }
+
     [HttpGet("quizzes/{id:guid}")]
     public async Task<ActionResult<QuizTemplateResponse>> GetQuizTemplate(Guid id, CancellationToken ct)
     {
@@ -253,6 +283,12 @@ public class TemplatesController : ControllerBase
         var isCreator = template.CreatedBy == userId;
 
         if (!isAdmin && !isCreator) return Forbid();
+
+        // If template is published, unpublish it when editing
+        if (template.Status == TemplateStatus.Published)
+        {
+            template.Status = TemplateStatus.Approved;
+        }
 
         // Update template fields
         template.Title = req.Title;
@@ -477,6 +513,36 @@ public class TemplatesController : ControllerBase
         return Ok(new { message = "Template published successfully" });
     }
 
+    [HttpPost("assignments/{id:guid}/unpublish")]
+    public async Task<IActionResult> UnpublishAssignmentTemplate(Guid id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var template = await _db.AssignmentTemplates.FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (template == null) return NotFound();
+
+        // Check if user is creator or admin
+        var profile = await _db.Profiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        var isAdmin = profile?.Role == Admin;
+        var isCreator = template.CreatedBy == userId;
+
+        if (!isAdmin && !isCreator) return Forbid();
+
+        // Only published templates can be unpublished
+        if (template.Status != TemplateStatus.Published)
+        {
+            return BadRequest(new { message = "Only published templates can be unpublished" });
+        }
+
+        // Unpublish: change status back to Approved
+        template.Status = TemplateStatus.Approved;
+        template.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { message = "Template unpublished successfully" });
+    }
+
     [HttpGet("assignments/{id:guid}")]
     public async Task<ActionResult<AssignmentTemplateResponse>> GetAssignmentTemplate(Guid id, CancellationToken ct)
     {
@@ -519,6 +585,12 @@ public class TemplatesController : ControllerBase
         var isCreator = template.CreatedBy == userId;
 
         if (!isAdmin && !isCreator) return Forbid();
+
+        // If template is published, unpublish it when editing
+        if (template.Status == TemplateStatus.Published)
+        {
+            template.Status = TemplateStatus.Approved;
+        }
 
         // Update template fields
         template.Title = req.Title;
@@ -741,6 +813,36 @@ public class TemplatesController : ControllerBase
         return Ok(new { message = "Template published successfully" });
     }
 
+    [HttpPost("materials/{id:guid}/unpublish")]
+    public async Task<IActionResult> UnpublishMaterialTemplate(Guid id, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var template = await _db.MaterialTemplates.FirstOrDefaultAsync(t => t.Id == id, ct);
+        if (template == null) return NotFound();
+
+        // Check if user is creator or admin
+        var profile = await _db.Profiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        var isAdmin = profile?.Role == Admin;
+        var isCreator = template.CreatedBy == userId;
+
+        if (!isAdmin && !isCreator) return Forbid();
+
+        // Only published templates can be unpublished
+        if (template.Status != TemplateStatus.Published)
+        {
+            return BadRequest(new { message = "Only published templates can be unpublished" });
+        }
+
+        // Unpublish: change status back to Approved
+        template.Status = TemplateStatus.Approved;
+        template.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { message = "Template unpublished successfully" });
+    }
+
     [HttpGet("materials/{id:guid}")]
     public async Task<ActionResult<MaterialTemplateResponse>> GetMaterialTemplate(Guid id, CancellationToken ct)
     {
@@ -784,6 +886,12 @@ public class TemplatesController : ControllerBase
         var isCreator = template.CreatedBy == userId;
 
         if (!isAdmin && !isCreator) return Forbid();
+
+        // If template is published, unpublish it when editing
+        if (template.Status == TemplateStatus.Published)
+        {
+            template.Status = TemplateStatus.Approved;
+        }
 
         // Update template fields
         template.Title = req.Title;

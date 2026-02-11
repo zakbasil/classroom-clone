@@ -169,10 +169,10 @@ C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debu
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\staticwebassets.build.json.cache
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\staticwebassets.development.json
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\Classroo.BC475F2E.Up2Date
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\ClassroomClone.Api.dll
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\refint\ClassroomClone.Api.dll
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\ClassroomClone.Api.pdb
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\ClassroomClone.Api.genruntimeconfig.cache
 C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\ref\ClassroomClone.Api.dll
+C:\Users\basil\Documents\git\classroom-clone\backend\ClassroomClone.Api\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

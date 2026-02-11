@@ -1078,6 +1078,22 @@
   },
   {
     "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "UnpublishAssignmentTemplate",
+    "RelativePath": "api/Templates/assignments/{id}/unpublish",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
     "Method": "GetPersonalAssignmentTemplates",
     "RelativePath": "api/Templates/assignments/personal",
     "HttpMethod": "GET",
@@ -1249,6 +1265,22 @@
   },
   {
     "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "UnpublishMaterialTemplate",
+    "RelativePath": "api/Templates/materials/{id}/unpublish",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
     "Method": "GetPersonalMaterialTemplates",
     "RelativePath": "api/Templates/materials/personal",
     "HttpMethod": "GET",
@@ -1406,6 +1438,22 @@
     "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
     "Method": "RequestApprovalQuizTemplate",
     "RelativePath": "api/Templates/quizzes/{id}/request-approval",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Guid",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ClassroomClone.Api.Controllers.TemplatesController",
+    "Method": "UnpublishQuizTemplate",
+    "RelativePath": "api/Templates/quizzes/{id}/unpublish",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,

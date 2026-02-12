@@ -49,6 +49,7 @@ public class MaterialsController : ControllerBase
         if (userId == null) return Unauthorized();
         if (!await CanAccessClass(userId.Value, Guid.Parse(req.ClassId), ct)) return Forbid();
 
+        var attachments = req.Attachments ?? new List<MaterialAttachmentDto>();
         var m = new Material
         {
             Id = Guid.NewGuid(),
@@ -56,7 +57,7 @@ public class MaterialsController : ControllerBase
             Title = req.Title,
             Description = req.Description,
             Topic = req.Topic,
-            AttachmentsJson = "[]",
+            AttachmentsJson = JsonSerializer.Serialize(attachments, JsonOptions),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -69,7 +70,7 @@ public class MaterialsController : ControllerBase
             m.Description,
             m.Topic,
             m.CreatedAt.ToString("O"),
-            new List<MaterialAttachmentDto>()
+            attachments
         ));
     }
 

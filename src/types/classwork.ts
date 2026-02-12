@@ -6,6 +6,11 @@ export interface QuestionOption {
   text: string;
 }
 
+export interface TestCase {
+  input: string;
+  expectedOutput: string;
+}
+
 export interface Question {
   id: string;
   type: QuestionType;
@@ -14,6 +19,8 @@ export interface Question {
   options?: QuestionOption[]; // For multiple choice
   correctOptionId?: string; // For multiple choice
   codeLanguage?: string; // For code questions
+  visibleTestCases?: TestCase[]; // For code questions - visible to students
+  hiddenTestCases?: TestCase[]; // For code questions - hidden from students
 }
 
 export interface Quiz {
@@ -28,6 +35,8 @@ export interface Quiz {
   createdAt: string;
   requireFullscreen: boolean;
   timeLimit?: number; // in minutes
+  paperPdfUrl?: string; // PDF data URL or URL for paper-based quizzes
+  isPaperBased?: boolean; // Whether this quiz was created from a PDF paper
 }
 
 export interface QuestionSet {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useData } from '@/contexts/DataContext';
 import {
   Dialog,
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical, Clock, Loader2, FileText } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Clock, Loader2, FileText, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getQuizTemplates, createQuizTemplate, type QuizTemplate } from '@/lib/database';
 import {
@@ -31,6 +31,8 @@ interface CreateQuizDialogProps {
   onCreated?: () => void;
 }
 
+type QuizMode = 'question' | 'paper';
+
 export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: CreateQuizDialogProps) {
   const { createQuiz } = useData();
   const [title, setTitle] = useState('');
@@ -47,6 +49,13 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
   const [templates, setTemplates] = useState<QuizTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  const [quizMode, setQuizMode] = useState<QuizMode | null>(null);
+  const [paperNumQuestions, setPaperNumQuestions] = useState<number>(5);
+  const [paperOptionsPerQuestion, setPaperOptionsPerQuestion] = useState<number>(4);
+  const [paperPdfFile, setPaperPdfFile] = useState<File | null>(null);
+  const [showAnswerModal, setShowAnswerModal] = useState(false);
+  const [correctAnswers, setCorrectAnswers] = useState<Record<number, string>>({});
+  const pdfInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open && useTemplate) {
@@ -80,6 +89,10 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
     }
   };
 
+  const generateAlphabeticLabel = (index: number): string => {
+    return String.fromCharCode(65 + index); // A, B, C, D, etc.
+  };
+
   const addQuestion = () => {
     const newQuestion: Question = {
       id: `q-${Date.now()}`,
@@ -93,6 +106,84 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
       correctOptionId: undefined,
     };
     setQuestions([...questions, newQuestion]);
+  };
+
+  const handlePdfSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('Please upload a PDF file');
+        return;
+      }
+      setPaperPdfFile(file);
+    }
+    // Reset input
+    if (pdfInputRef.current) {
+      pdfInputRef.current.value = '';
+    }
+  };
+
+  const handleOpenAnswerModal = () => {
+    if (!paperPdfFile) {
+      toast.error('Please upload a PDF file first');
+      return;
+    }
+    if (paperNumQuestions < 1) {
+      toast.error('Please enter a valid number of questions');
+      return;
+    }
+    if (paperOptionsPerQuestion < 2) {
+      toast.error('Please enter at least 2 options per question');
+      return;
+    }
+    setShowAnswerModal(true);
+  };
+
+  const handleAnswerModalSubmit = () => {
+    // Validate all questions have answers
+    const missingAnswers: number[] = [];
+    for (let i = 0; i < paperNumQuestions; i++) {
+      if (!correctAnswers[i]) {
+        missingAnswers.push(i + 1);
+      }
+    }
+    if (missingAnswers.length > 0) {
+      toast.error(`Please select answers for questions: ${missingAnswers.join(', ')}`);
+      return;
+    }
+
+    // Generate questions with correct answers
+    const newQuestions: Question[] = [];
+    for (let i = 0; i < paperNumQuestions; i++) {
+      const options = [];
+      let correctOptionId: string | undefined;
+      
+      for (let j = 0; j < paperOptionsPerQuestion; j++) {
+        const optionId = `opt-${Date.now()}-${i}-${j}`;
+        options.push({
+          id: optionId,
+          text: `${generateAlphabeticLabel(j)}. `,
+        });
+        
+        // Set correct option based on answer
+        if (correctAnswers[i] === generateAlphabeticLabel(j)) {
+          correctOptionId = optionId;
+        }
+      }
+      
+      newQuestions.push({
+        id: `q-${Date.now()}-${i}`,
+        type: 'multiple_choice',
+        text: `Question ${i + 1}`,
+        points: 10,
+        options,
+        correctOptionId,
+      });
+    }
+    
+    setQuestions(newQuestions);
+    setShowAnswerModal(false);
+    setCorrectAnswers({});
   };
 
   const updateQuestion = (index: number, updates: Partial<Question>) => {
@@ -179,6 +270,17 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
 
     setIsSubmitting(true);
     try {
+      // Convert PDF to data URL if paper-based quiz
+      let paperPdfUrl: string | undefined;
+      if (quizMode === 'paper' && paperPdfFile) {
+        paperPdfUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(paperPdfFile);
+        });
+      }
+
       await createQuiz(
         classId,
         title,
@@ -188,7 +290,9 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
         totalPoints,
         fullDueDate,
         requireFullscreen,
-        timeLimit ? Number(timeLimit) : undefined
+        timeLimit ? Number(timeLimit) : undefined,
+        quizMode === 'paper' ? paperPdfUrl : undefined,
+        quizMode === 'paper'
       );
 
       toast.success('Quiz created successfully!');
@@ -246,6 +350,12 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
     setQuestions([]);
     setUseTemplate(false);
     setSelectedTemplateId('');
+    setQuizMode(null);
+    setPaperNumQuestions(5);
+    setPaperOptionsPerQuestion(4);
+    setPaperPdfFile(null);
+    setCorrectAnswers({});
+    setShowAnswerModal(false);
   };
 
   return (
@@ -381,13 +491,147 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
 
           {/* Questions */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Questions</h3>
-              <Button onClick={addQuestion} variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-1" />
-                Add Question
-              </Button>
-            </div>
+            {questions.length === 0 && !quizMode && (
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Choose Question Mode</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setQuizMode('question');
+                      addQuestion();
+                    }}
+                    className="h-24 flex flex-col items-center justify-center gap-2"
+                  >
+                    <FileText className="w-6 h-6" />
+                    <span>Add Question</span>
+                    <span className="text-xs text-muted-foreground">Manual entry</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setQuizMode('paper')}
+                    className="h-24 flex flex-col items-center justify-center gap-2"
+                  >
+                    <FileText className="w-6 h-6" />
+                    <span>Add Paper</span>
+                    <span className="text-xs text-muted-foreground">Bulk generation</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {quizMode === 'paper' && questions.length === 0 && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                <Label className="text-base font-semibold">Paper Configuration</Label>
+                
+                {/* PDF Upload */}
+                <div className="space-y-2">
+                  <Label>Upload Question Paper (PDF)</Label>
+                  <input
+                    ref={pdfInputRef}
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handlePdfSelect}
+                    className="hidden"
+                    id="pdf-upload"
+                  />
+                  <div className="space-y-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => pdfInputRef.current?.click()}
+                      className="w-full"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {paperPdfFile ? 'Change PDF' : 'Upload PDF'}
+                    </Button>
+                    {paperPdfFile && (
+                      <div className="flex items-center justify-between p-2 bg-background rounded-lg border">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <FileText className="w-4 h-4 text-destructive shrink-0" />
+                          <span className="text-sm truncate">{paperPdfFile.name}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            ({(paperPdfFile.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setPaperPdfFile(null)}
+                          className="h-6 w-6 shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Number of Questions and Options */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="numQuestions">Number of Questions</Label>
+                    <Input
+                      id="numQuestions"
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={paperNumQuestions}
+                      onChange={(e) => setPaperNumQuestions(parseInt(e.target.value) || 1)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="optionsPerQuestion">Options per Question</Label>
+                    <Input
+                      id="optionsPerQuestion"
+                      type="number"
+                      min={2}
+                      max={10}
+                      value={paperOptionsPerQuestion}
+                      onChange={(e) => setPaperOptionsPerQuestion(parseInt(e.target.value) || 2)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    onClick={handleOpenAnswerModal}
+                    className="gradient-primary"
+                    disabled={!paperPdfFile}
+                  >
+                    Set Correct Answers
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setQuizMode(null);
+                      setQuestions([]);
+                      setPaperPdfFile(null);
+                      setCorrectAnswers({});
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {questions.length > 0 && (
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Questions ({questions.length})</h3>
+                {quizMode === 'question' && (
+                  <Button onClick={addQuestion} variant="outline" size="sm">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Question
+                  </Button>
+                )}
+              </div>
+            )}
 
             {questions.length === 0 ? (
               <Card className="border-dashed">
@@ -443,13 +687,16 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
                                   onChange={() => setCorrectOption(qIndex, option.id)}
                                   className="w-4 h-4 text-primary"
                                 />
+                                <span className="w-6 text-sm font-medium text-muted-foreground">
+                                  {generateAlphabeticLabel(oIndex)}.
+                                </span>
                                 <Input
                                   value={option.text}
                                   onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
-                                  placeholder={`Option ${oIndex + 1}`}
+                                  placeholder={`Option ${generateAlphabeticLabel(oIndex)}`}
                                   className={question.correctOptionId === option.id ? 'border-primary' : ''}
                                 />
-                                {question.options && question.options.length > 2 && (
+                                {question.options && question.options.length > 2 && quizMode === 'question' && (
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -461,15 +708,17 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
                                 )}
                               </div>
                             ))}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => addOption(qIndex)}
-                              className="text-primary"
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              Add Option
-                            </Button>
+                            {quizMode === 'question' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addOption(qIndex)}
+                                className="text-primary"
+                              >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Add Option
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -518,6 +767,79 @@ export function CreateQuizDialog({ classId, open, onOpenChange, onCreated }: Cre
           </div>
         </div>
       </DialogContent>
+
+      {/* OMR Answer Modal */}
+      {showAnswerModal && (
+        <Dialog open={showAnswerModal} onOpenChange={setShowAnswerModal}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Set Correct Answers (OMR Style)</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                Select the correct answer for each question. Answers are labeled A, B, C, D, etc.
+              </p>
+              
+              <div className="grid grid-cols-5 gap-2">
+                {/* Header */}
+                <div className="font-semibold text-sm">Question</div>
+                {Array.from({ length: paperOptionsPerQuestion }, (_, i) => (
+                  <div key={i} className="font-semibold text-sm text-center">
+                    {generateAlphabeticLabel(i)}
+                  </div>
+                ))}
+                
+                {/* Rows for each question */}
+                {Array.from({ length: paperNumQuestions }, (_, qIndex) => (
+                  <>
+                    <div className="flex items-center font-medium">
+                      Q{qIndex + 1}
+                    </div>
+                    {Array.from({ length: paperOptionsPerQuestion }, (_, oIndex) => {
+                      const optionLabel = generateAlphabeticLabel(oIndex);
+                      const isSelected = correctAnswers[qIndex] === optionLabel;
+                      return (
+                        <div key={oIndex} className="flex justify-center">
+                          <input
+                            type="radio"
+                            name={`question-${qIndex}`}
+                            checked={isSelected}
+                            onChange={() => {
+                              setCorrectAnswers(prev => ({
+                                ...prev,
+                                [qIndex]: optionLabel,
+                              }));
+                            }}
+                            className="w-5 h-5 text-primary cursor-pointer"
+                          />
+                        </div>
+                      );
+                    })}
+                  </>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAnswerModal(false);
+                    setCorrectAnswers({});
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAnswerModalSubmit}
+                  className="gradient-primary"
+                >
+                  Generate Questions
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }

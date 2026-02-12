@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, Trash2, GripVertical, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { Question, QuestionType } from '@/types/classwork';
+import type { Question, QuestionType, TestCase } from '@/types/classwork';
 
 interface CreateQuestionsDialogProps {
   classId: string;
@@ -222,7 +222,7 @@ export function CreateQuestionsDialog({ classId, open, onOpenChange, onCreated }
         );
       case 'code':
         return (
-          <div className="pl-4">
+          <div className="pl-4 space-y-4">
             <Select
               value={question.codeLanguage || 'javascript'}
               onValueChange={(value) => updateQuestion(qIndex, { codeLanguage: value })}
@@ -235,13 +235,167 @@ export function CreateQuestionsDialog({ classId, open, onOpenChange, onCreated }
                 <SelectItem value="python">Python</SelectItem>
                 <SelectItem value="java">Java</SelectItem>
                 <SelectItem value="cpp">C++</SelectItem>
+                <SelectItem value="c">C</SelectItem>
                 <SelectItem value="csharp">C#</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground mt-2">
-              Students will write code in a code editor (not executed)
-            </p>
+            
+            {/* Visible Test Cases */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Visible Test Cases (shown to students)</Label>
+              {(question.visibleTestCases || []).map((testCase, tcIndex) => (
+                <Card key={tcIndex} className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Test Case {tcIndex + 1}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const updated = [...questions];
+                          const testCases = [...(updated[qIndex].visibleTestCases || [])];
+                          testCases.splice(tcIndex, 1);
+                          updated[qIndex].visibleTestCases = testCases;
+                          setQuestions(updated);
+                        }}
+                        className="h-6 w-6"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Input</Label>
+                        <Textarea
+                          value={testCase.input}
+                          onChange={(e) => {
+                            const updated = [...questions];
+                            const testCases = [...(updated[qIndex].visibleTestCases || [])];
+                            testCases[tcIndex] = { ...testCases[tcIndex], input: e.target.value };
+                            updated[qIndex].visibleTestCases = testCases;
+                            setQuestions(updated);
+                          }}
+                          placeholder="Input"
+                          className="text-xs"
+                          rows={2}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Expected Output</Label>
+                        <Textarea
+                          value={testCase.expectedOutput}
+                          onChange={(e) => {
+                            const updated = [...questions];
+                            const testCases = [...(updated[qIndex].visibleTestCases || [])];
+                            testCases[tcIndex] = { ...testCases[tcIndex], expectedOutput: e.target.value };
+                            updated[qIndex].visibleTestCases = testCases;
+                            setQuestions(updated);
+                          }}
+                          placeholder="Expected Output"
+                          className="text-xs"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const updated = [...questions];
+                  updated[qIndex].visibleTestCases = [
+                    ...(updated[qIndex].visibleTestCases || []),
+                    { input: '', expectedOutput: '' }
+                  ];
+                  setQuestions(updated);
+                }}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Visible Test Case
+              </Button>
+            </div>
+
+            {/* Hidden Test Cases */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Hidden Test Cases (for final submission)</Label>
+              {(question.hiddenTestCases || []).map((testCase, tcIndex) => (
+                <Card key={tcIndex} className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Test Case {tcIndex + 1}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          const updated = [...questions];
+                          const testCases = [...(updated[qIndex].hiddenTestCases || [])];
+                          testCases.splice(tcIndex, 1);
+                          updated[qIndex].hiddenTestCases = testCases;
+                          setQuestions(updated);
+                        }}
+                        className="h-6 w-6"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">Input</Label>
+                        <Textarea
+                          value={testCase.input}
+                          onChange={(e) => {
+                            const updated = [...questions];
+                            const testCases = [...(updated[qIndex].hiddenTestCases || [])];
+                            testCases[tcIndex] = { ...testCases[tcIndex], input: e.target.value };
+                            updated[qIndex].hiddenTestCases = testCases;
+                            setQuestions(updated);
+                          }}
+                          placeholder="Input"
+                          className="text-xs"
+                          rows={2}
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Expected Output</Label>
+                        <Textarea
+                          value={testCase.expectedOutput}
+                          onChange={(e) => {
+                            const updated = [...questions];
+                            const testCases = [...(updated[qIndex].hiddenTestCases || [])];
+                            testCases[tcIndex] = { ...testCases[tcIndex], expectedOutput: e.target.value };
+                            updated[qIndex].hiddenTestCases = testCases;
+                            setQuestions(updated);
+                          }}
+                          placeholder="Expected Output"
+                          className="text-xs"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const updated = [...questions];
+                  updated[qIndex].hiddenTestCases = [
+                    ...(updated[qIndex].hiddenTestCases || []),
+                    { input: '', expectedOutput: '' }
+                  ];
+                  setQuestions(updated);
+                }}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Hidden Test Case
+              </Button>
+            </div>
           </div>
         );
       case 'short_answer':

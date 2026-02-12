@@ -11,10 +11,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Clock, Code, FileText, Trophy, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Code, FileText, Trophy, Loader2, Play, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { SubmissionsLeaderboard } from '@/components/class/SubmissionsLeaderboard';
 import type { QuestionSet, SubmissionEntry } from '@/contexts/DataContext';
+import { apiPost } from '@/lib/api';
+import type { TestCase } from '@/types/classwork';
+import { getQuestionSetSubmissionsByQuestionSet } from '@/lib/database';
 
 const CACHE_KEY_PREFIX = 'questions_attempt_';
 
@@ -36,11 +39,12 @@ export default function QuestionsPage() {
   const classData = classId ? getClassById(classId) : undefined;
   const isCreator = classId ? isCreatorOfClass(classId) : false;
 
-  // Mock submissions for question sets (would need a separate API call in real impl)
-  const [questionSetSubmissions] = useState<SubmissionEntry[]>([]);
+  const [questionSetSubmissions, setQuestionSetSubmissions] = useState<SubmissionEntry[]>([]);
 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [runningQuestionId, setRunningQuestionId] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, any>>({});
 
   // Load question set data
   useEffect(() => {
@@ -56,6 +60,26 @@ export default function QuestionsPage() {
           const members = await getClassMembers(classId);
           setStudentCount(members.filter(m => !m.isCreator).length);
         }
+
+        // Load submissions if creator
+        if (isCreator && questionSetId) {
+          try {
+            const submissions = await getQuestionSetSubmissionsByQuestionSet(questionSetId);
+            const submissionEntries: SubmissionEntry[] = submissions.map(s => ({
+              id: s.id,
+              studentId: s.user_id,
+              studentName: s.studentName,
+              submittedAt: s.submitted_at || s.started_at,
+              score: s.score || 0,
+              totalPoints: data?.totalPoints || 0,
+              status: s.submitted_at ? 'submitted' : 'pending',
+              timeTaken: s.time_taken || undefined,
+            }));
+            setQuestionSetSubmissions(submissionEntries);
+          } catch (error) {
+            console.error('Error loading submissions:', error);
+          }
+        }
       } catch (error) {
         console.error('Error loading question set:', error);
       } finally {
@@ -63,7 +87,7 @@ export default function QuestionsPage() {
       }
     }
     loadQuestionSet();
-  }, [questionSetId, classId]);
+  }, [questionSetId, classId, isCreator]);
 
   // Load cached attempt
   useEffect(() => {
@@ -99,6 +123,119 @@ export default function QuestionsPage() {
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
+  };
+
+  const handleRunCode = async (questionId: string) => {
+    const question = questionSet?.questions.find(q => q.id === questionId);
+    if (!question || question.type !== 'code') return;
+    
+    const code = answers[questionId] || '';
+    if (!code.trim()) {
+      toast.error('Please write some code first');
+      return;
+    }
+
+    if (!question.visibleTestCases || question.visibleTestCases.length === 0) {
+      toast.error('No test cases available for this question');
+      return;
+    }
+
+    setRunningQuestionId(questionId);
+    try {
+      const result = await apiPost<{
+        totalTestCases: number;
+        passedTestCases: number;
+        results: Array<{
+          testCaseIndex: number;
+          passed: boolean;
+          input: string;
+          expectedOutput: string;
+          actualOutput?: string;
+          error?: string;
+        }>;
+        executionError?: string;
+      }>('/api/questionsets/execute-code', {
+        code,
+        language: question.codeLanguage || 'python',
+        testCases: question.visibleTestCases,
+        questionSetId: questionSetId,
+        questionId: questionId,
+        isSubmit: false
+      });
+
+      setTestResults(prev => ({ ...prev, [questionId]: result }));
+      
+      if (result.executionError) {
+        toast.error(`Execution error: ${result.executionError}`);
+      } else if (result.passedTestCases === result.totalTestCases) {
+        toast.success(`All ${result.totalTestCases} test cases passed!`);
+      } else {
+        toast.warning(`${result.passedTestCases} of ${result.totalTestCases} test cases passed`);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to run code');
+    } finally {
+      setRunningQuestionId(null);
+    }
+  };
+
+  const handleSubmitCode = async (questionId: string) => {
+    const question = questionSet?.questions.find(q => q.id === questionId);
+    if (!question || question.type !== 'code') return;
+    
+    const code = answers[questionId] || '';
+    if (!code.trim()) {
+      toast.error('Please write some code first');
+      return;
+    }
+
+    const allTestCases = [
+      ...(question.visibleTestCases || []),
+      ...(question.hiddenTestCases || [])
+    ];
+
+    if (allTestCases.length === 0) {
+      toast.error('No test cases available for this question');
+      return;
+    }
+
+    setRunningQuestionId(questionId);
+    try {
+      const result = await apiPost<{
+        totalTestCases: number;
+        passedTestCases: number;
+        results: Array<{
+          testCaseIndex: number;
+          passed: boolean;
+          input: string;
+          expectedOutput: string;
+          actualOutput?: string;
+          error?: string;
+        }>;
+        executionError?: string;
+      }>('/api/questionsets/execute-code', {
+        code,
+        language: question.codeLanguage || 'python',
+        testCases: allTestCases,
+        questionSetId: questionSetId,
+        questionId: questionId,
+        isSubmit: true
+      });
+
+      setTestResults(prev => ({ ...prev, [questionId]: result }));
+      
+      if (result.executionError) {
+        toast.error(`Execution error: ${result.executionError}`);
+      } else if (result.passedTestCases === result.totalTestCases) {
+        toast.success(`All ${result.totalTestCases} test cases passed!`);
+      } else {
+        toast.warning(`${result.passedTestCases} of ${result.totalTestCases} test cases passed`);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to submit code');
+    } finally {
+      setRunningQuestionId(null);
+    }
   };
 
   const handleSubmit = () => {
@@ -345,7 +482,7 @@ export default function QuestionsPage() {
                 )}
 
                 {question.type === 'code' && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Code className="w-4 h-4" />
                       <span>{question.codeLanguage || 'Code'}</span>
@@ -357,6 +494,82 @@ export default function QuestionsPage() {
                       className="font-mono text-sm"
                       rows={8}
                     />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRunCode(question.id)}
+                        disabled={runningQuestionId === question.id || !answers[question.id]?.trim()}
+                      >
+                        {runningQuestionId === question.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Running...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-4 h-4 mr-2" />
+                            Run
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleSubmitCode(question.id)}
+                        disabled={runningQuestionId === question.id || !answers[question.id]?.trim()}
+                      >
+                        {runningQuestionId === question.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Submit
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    {testResults[question.id] && (
+                      <div className="mt-3 p-3 bg-muted rounded-lg space-y-2">
+                        <div className="text-sm font-medium">
+                          Results: {testResults[question.id].passedTestCases} / {testResults[question.id].totalTestCases} passed
+                        </div>
+                        {testResults[question.id].executionError && (
+                          <div className="text-sm text-destructive">
+                            Error: {testResults[question.id].executionError}
+                          </div>
+                        )}
+                        {testResults[question.id].results && (
+                          <div className="space-y-2">
+                            {testResults[question.id].results.map((result: any, idx: number) => (
+                              <div
+                                key={idx}
+                                className={`p-2 rounded text-xs ${
+                                  result.passed ? 'bg-green-500/10 text-green-700 dark:text-green-400' : 'bg-red-500/10 text-red-700 dark:text-red-400'
+                                }`}
+                              >
+                                <div className="font-medium">Test Case {result.testCaseIndex + 1}: {result.passed ? '✓ Passed' : '✗ Failed'}</div>
+                                {!result.passed && (
+                                  <div className="mt-1 space-y-1">
+                                    <div>Input: <code className="bg-background px-1 rounded">{result.input}</code></div>
+                                    <div>Expected: <code className="bg-background px-1 rounded">{result.expectedOutput}</code></div>
+                                    {result.actualOutput && (
+                                      <div>Got: <code className="bg-background px-1 rounded">{result.actualOutput}</code></div>
+                                    )}
+                                    {result.error && (
+                                      <div className="text-destructive">Error: {result.error}</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

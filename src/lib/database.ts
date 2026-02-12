@@ -56,6 +56,8 @@ export interface DbQuiz {
   due_date: string;
   require_fullscreen: boolean;
   time_limit: number | null;
+  paper_pdf_url: string | null;
+  is_paper_based: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -107,6 +109,18 @@ export interface DbQuizSubmission {
   user_id: string;
   answers: Record<string, string>;
   score: number;
+  time_taken: number | null;
+  started_at: string;
+  submitted_at: string | null;
+  created_at: string;
+}
+
+export interface DbQuestionSetSubmission {
+  id: string;
+  question_set_id: string;
+  user_id: string;
+  answers_json: string;
+  score: number | null;
   time_taken: number | null;
   started_at: string;
   submitted_at: string | null;
@@ -282,7 +296,9 @@ export async function createQuiz(
   totalPoints: number,
   dueDate: string,
   requireFullscreen: boolean,
-  timeLimit: number | null
+  timeLimit: number | null,
+  paperPdfUrl: string | null,
+  isPaperBased: boolean
 ): Promise<DbQuiz> {
   const q = await apiPost<{
     id: string;
@@ -296,6 +312,8 @@ export async function createQuiz(
     createdAt: string;
     requireFullscreen: boolean;
     timeLimit?: number | null;
+    paperPdfUrl?: string | null;
+    isPaperBased?: boolean;
   }>('/api/quizzes', {
     classId,
     title,
@@ -306,6 +324,8 @@ export async function createQuiz(
     dueDate,
     requireFullscreen,
     timeLimit: timeLimit ?? undefined,
+    paperPdfUrl: paperPdfUrl ?? undefined,
+    isPaperBased: isPaperBased ?? false,
   });
   return {
     id: q.id,
@@ -318,6 +338,8 @@ export async function createQuiz(
     due_date: q.dueDate,
     require_fullscreen: q.requireFullscreen,
     time_limit: q.timeLimit ?? null,
+    paper_pdf_url: q.paperPdfUrl ?? null,
+    is_paper_based: q.isPaperBased ?? false,
     created_at: q.createdAt,
     updated_at: q.createdAt,
   };
@@ -401,6 +423,24 @@ export async function getQuestionSetById(id: string): Promise<DbQuestionSet | nu
   }
 }
 
+export async function getQuestionSetSubmissionsByQuestionSet(questionSetId: string): Promise<Array<DbQuestionSetSubmission & { studentName: string }>> {
+  const list = await apiGet<Array<{ id: string; studentId: string; studentName: string; submittedAt: string; score: number; totalPoints: number; status: string; timeTaken?: number | null }>>(
+    `/api/questionsets/${questionSetId}/submissions`
+  );
+  return list.map(s => ({
+    id: s.id,
+    question_set_id: questionSetId,
+    user_id: s.studentId,
+    studentName: s.studentName,
+    answers_json: '{}',
+    score: s.score,
+    time_taken: s.timeTaken ?? null,
+    started_at: s.submittedAt,
+    submitted_at: s.submittedAt,
+    created_at: s.submittedAt,
+  }));
+}
+
 export async function createQuestionSet(
   classId: string,
   title: string,
@@ -465,7 +505,8 @@ export async function createMaterial(
   classId: string,
   title: string,
   description: string | null,
-  topic: string | null
+  topic: string | null,
+  attachments?: { name: string; type: string; url: string }[]
 ): Promise<DbMaterial> {
   const m = await apiPost<{
     id: string;
@@ -480,6 +521,7 @@ export async function createMaterial(
     title,
     description: description ?? undefined,
     topic: topic ?? undefined,
+    attachments: attachments ?? [],
   });
   return {
     id: m.id,
@@ -528,8 +570,8 @@ export async function createAnnouncement(classId: string, _authorId: string, con
 
 // --- Question Set Submissions (if used elsewhere) ---
 
-export async function getQuestionSetSubmissions(_questionSetId: string) {
-  return [];
+export async function getQuestionSetSubmissions(questionSetId: string): Promise<DbQuestionSetSubmission[]> {
+  return getQuestionSetSubmissionsByQuestionSet(questionSetId);
 }
 
 export async function upsertQuestionSetSubmission(

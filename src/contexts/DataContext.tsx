@@ -119,7 +119,9 @@ interface DataContextType {
     totalPoints: number,
     dueDate: string,
     requireFullscreen: boolean,
-    timeLimit?: number
+    timeLimit?: number,
+    paperPdfUrl?: string,
+    isPaperBased?: boolean
   ) => Promise<Quiz>;
   getQuizSubmissions: (quizId: string) => Promise<SubmissionEntry[]>;
   submitQuizAttempt: (quizId: string, answers: Record<string, string>, score: number, timeTaken?: number) => Promise<void>;
@@ -138,7 +140,7 @@ interface DataContextType {
   
   // Material operations
   getMaterialsByClass: (classId: string) => Promise<Material[]>;
-  createMaterial: (classId: string, title: string, description?: string, topic?: string) => Promise<Material>;
+  createMaterial: (classId: string, title: string, description?: string, topic?: string, attachments?: { name: string; type: string; url: string }[]) => Promise<Material>;
   
   // Announcement operations
   getAnnouncementsByClass: (classId: string) => Promise<Announcement[]>;
@@ -277,7 +279,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     totalPoints: number,
     dueDate: string,
     requireFullscreen: boolean,
-    timeLimit?: number
+    timeLimit?: number,
+    paperPdfUrl?: string,
+    isPaperBased?: boolean
   ): Promise<Quiz> => {
     const dbQuiz = await db.createQuiz(
       classId,
@@ -288,7 +292,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       totalPoints,
       dueDate,
       requireFullscreen,
-      timeLimit || null
+      timeLimit || null,
+      paperPdfUrl || null,
+      isPaperBased || false
     );
     
     return {
@@ -303,6 +309,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       createdAt: dbQuiz.created_at,
       requireFullscreen: dbQuiz.require_fullscreen,
       timeLimit: dbQuiz.time_limit || undefined,
+      paperPdfUrl: dbQuiz.paper_pdf_url || undefined,
+      isPaperBased: dbQuiz.is_paper_based || false,
     };
   };
 
@@ -402,9 +410,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     classId: string,
     title: string,
     description?: string,
-    topic?: string
+    topic?: string,
+    attachments?: { name: string; type: string; url: string }[]
   ): Promise<Material> => {
-    const dbMaterial = await db.createMaterial(classId, title, description || null, topic || null);
+    const dbMaterial = await db.createMaterial(classId, title, description || null, topic || null, attachments);
     return {
       id: dbMaterial.id,
       classId: dbMaterial.class_id,

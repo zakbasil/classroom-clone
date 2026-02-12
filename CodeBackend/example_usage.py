@@ -136,11 +136,11 @@ if __name__ == "__main__":
     print()
     
     try:
-        test_python()
+        # test_python()
         # Uncomment to test other languages (requires compilers installed)
         # test_c()
         # test_cpp()
-        # test_java()
+        test_java()
     except requests.exceptions.ConnectionError:
         print("Error: Could not connect to the server.")
         print("Please make sure the server is running:")

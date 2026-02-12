@@ -811,6 +811,22 @@
     ]
   },
   {
+    "ContainingType": "ClassroomClone.Api.Controllers.QuestionSetsController",
+    "Method": "ExecuteCode",
+    "RelativePath": "api/QuestionSets/execute-code",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "req",
+        "Type": "ClassroomClone.Api.Controllers.ExecuteCodeRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "ClassroomClone.Api.Controllers.QuizzesController",
     "Method": "Create",
     "RelativePath": "api/Quizzes",

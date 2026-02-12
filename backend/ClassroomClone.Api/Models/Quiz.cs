@@ -13,6 +13,8 @@ public class Quiz
     public DateTime DueDate { get; set; }
     public bool RequireFullscreen { get; set; }
     public int? TimeLimit { get; set; } // minutes
+    public string? PaperPdfUrl { get; set; } // PDF data URL for paper-based quizzes
+    public bool IsPaperBased { get; set; } // Whether this quiz was created from a PDF paper
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

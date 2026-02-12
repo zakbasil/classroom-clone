@@ -700,35 +700,86 @@ function QuizContentWithTimer({
       </div>
 
       {/* Questions */}
-      <div className="space-y-6">
-        {quiz.questions.map((question, index) => (
-          <Card key={question.id} className="shadow-card rounded-2xl">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <span className="text-sm text-muted-foreground">Question {index + 1}</span>
-                <Badge variant="secondary">{question.points} pts</Badge>
-              </div>
-              <p className="font-medium mb-4">{question.text}</p>
+      {quiz.isPaperBased && quiz.paperPdfUrl ? (
+        <div className="grid grid-cols-2 gap-6">
+          {/* PDF Viewer on Left */}
+          <div className="sticky top-4 h-[calc(100vh-8rem)]">
+            <Card className="shadow-card rounded-2xl h-full">
+              <CardContent className="p-0 h-full">
+                <iframe
+                  src={quiz.paperPdfUrl}
+                  className="w-full h-full rounded-2xl"
+                  title="Question Paper PDF"
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-              <RadioGroup
-                value={answers[question.id] || ''}
-                onValueChange={(value) => onAnswerChange(question.id, value)}
-              >
-                <div className="space-y-2">
-                  {question.options?.map((option) => (
-                    <div key={option.id} className="flex items-center space-x-3">
-                      <RadioGroupItem value={option.id} id={option.id} />
-                      <Label htmlFor={option.id} className="flex-1 cursor-pointer py-2">
-                        {option.text}
-                      </Label>
+          {/* OMR Options on Right */}
+          <div className="space-y-6">
+            {quiz.questions.map((question, index) => (
+              <Card key={question.id} className="shadow-card rounded-2xl">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="text-sm text-muted-foreground font-semibold">Question {index + 1}</span>
+                    <Badge variant="secondary">{question.points} pts</Badge>
+                  </div>
+
+                  <RadioGroup
+                    value={answers[question.id] || ''}
+                    onValueChange={(value) => onAnswerChange(question.id, value)}
+                  >
+                    <div className="grid grid-cols-2 gap-3">
+                      {question.options?.map((option, optIndex) => {
+                        const optionLabel = String.fromCharCode(65 + optIndex); // A, B, C, D, etc.
+                        return (
+                          <div key={option.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                            <RadioGroupItem value={option.id} id={option.id} />
+                            <Label htmlFor={option.id} className="flex-1 cursor-pointer flex items-center gap-2">
+                              <span className="font-semibold text-primary w-6">{optionLabel}.</span>
+                              <span className="flex-1">{option.text || optionLabel}</span>
+                            </Label>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {quiz.questions.map((question, index) => (
+            <Card key={question.id} className="shadow-card rounded-2xl">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-sm text-muted-foreground">Question {index + 1}</span>
+                  <Badge variant="secondary">{question.points} pts</Badge>
                 </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <p className="font-medium mb-4">{question.text}</p>
+
+                <RadioGroup
+                  value={answers[question.id] || ''}
+                  onValueChange={(value) => onAnswerChange(question.id, value)}
+                >
+                  <div className="space-y-2">
+                    {question.options?.map((option) => (
+                      <div key={option.id} className="flex items-center space-x-3">
+                        <RadioGroupItem value={option.id} id={option.id} />
+                        <Label htmlFor={option.id} className="flex-1 cursor-pointer py-2">
+                          {option.text}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Submit Button */}
       <div className="mt-8 flex justify-end">

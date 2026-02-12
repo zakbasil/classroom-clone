@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ClassroomClone.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0b03cde5c296650f2a5bf253f1ddbc3b2e669be5")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4e67d89f95ed93feb68ca99a73e034ecbd25084e")]
 [assembly: System.Reflection.AssemblyProductAttribute("ClassroomClone.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ClassroomClone.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -20,6 +20,7 @@ else
     builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlite(connectionString));
 
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddHttpClient();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opts =>

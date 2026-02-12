@@ -4,6 +4,7 @@ namespace ClassroomClone.Api.DTOs;
 
 // Frontend question types
 public record QuestionOptionDto(string Id, string Text);
+public record TestCaseDto(string Input, string ExpectedOutput);
 public record QuestionDto(
     string Id,
     string Type, // short_answer | long_answer | multiple_choice | code
@@ -11,7 +12,9 @@ public record QuestionDto(
     int Points,
     List<QuestionOptionDto>? Options,
     string? CorrectOptionId,
-    string? CodeLanguage
+    string? CodeLanguage,
+    List<TestCaseDto>? VisibleTestCases,
+    List<TestCaseDto>? HiddenTestCases
 );
 
 public record CreateQuizRequest(
@@ -23,7 +26,9 @@ public record CreateQuizRequest(
     int TotalPoints,
     string DueDate,
     bool RequireFullscreen,
-    int? TimeLimit
+    int? TimeLimit,
+    string? PaperPdfUrl,
+    bool? IsPaperBased
 );
 
 public record QuizResponse(
@@ -37,7 +42,9 @@ public record QuizResponse(
     string DueDate,
     string CreatedAt,
     bool RequireFullscreen,
-    int? TimeLimit
+    int? TimeLimit,
+    string? PaperPdfUrl,
+    bool? IsPaperBased
 );
 
 public record QuizSubmissionResponse(

@@ -44,7 +44,9 @@ public class QuizzesController : ControllerBase
             q.DueDate.ToString("O"),
             q.CreatedAt.ToString("O"),
             q.RequireFullscreen,
-            q.TimeLimit
+            q.TimeLimit,
+            q.PaperPdfUrl,
+            q.IsPaperBased
         ));
     }
 
@@ -69,6 +71,8 @@ public class QuizzesController : ControllerBase
             DueDate = dueDate,
             RequireFullscreen = req.RequireFullscreen,
             TimeLimit = req.TimeLimit,
+            PaperPdfUrl = req.PaperPdfUrl,
+            IsPaperBased = req.IsPaperBased ?? false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -101,7 +105,9 @@ public class QuizzesController : ControllerBase
             quiz.DueDate.ToString("O"),
             quiz.CreatedAt.ToString("O"),
             quiz.RequireFullscreen,
-            quiz.TimeLimit
+            quiz.TimeLimit,
+            quiz.PaperPdfUrl,
+            quiz.IsPaperBased
         ));
     }
 

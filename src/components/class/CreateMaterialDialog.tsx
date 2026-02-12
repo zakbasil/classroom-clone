@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useData } from '@/contexts/DataContext';
 import {
   Dialog,
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, FileText } from 'lucide-react';
+import { Loader2, FileText, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getMaterialTemplates, createMaterialTemplate, type MaterialTemplate } from '@/lib/database';
 import {
@@ -29,6 +29,12 @@ interface CreateMaterialDialogProps {
   onCreated?: () => void;
 }
 
+interface MaterialAttachment {
+  name: string;
+  type: string;
+  url: string;
+}
+
 export function CreateMaterialDialog({ classId, open, onOpenChange, onCreated }: CreateMaterialDialogProps) {
   const { createMaterial } = useData();
   const [title, setTitle] = useState('');
@@ -40,6 +46,8 @@ export function CreateMaterialDialog({ classId, open, onOpenChange, onCreated }:
   const [templates, setTemplates] = useState<MaterialTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  const [attachments, setAttachments] = useState<MaterialAttachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open && useTemplate) {
@@ -70,6 +78,33 @@ export function CreateMaterialDialog({ classId, open, onOpenChange, onCreated }:
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const attachment: MaterialAttachment = {
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        url: URL.createObjectURL(file), // Temporary URL for preview, in production this would be uploaded to a server
+      };
+      setAttachments(prev => [...prev, attachment]);
+    });
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    const attachment = attachments[index];
+    if (attachment.url.startsWith('blob:')) {
+      URL.revokeObjectURL(attachment.url);
+    }
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
     if (!title.trim()) {
       toast.error('Please enter a title');
@@ -78,7 +113,9 @@ export function CreateMaterialDialog({ classId, open, onOpenChange, onCreated }:
 
     setIsSubmitting(true);
     try {
-      await createMaterial(classId, title, description || undefined, topic || undefined);
+      // For now, we'll create the material with attachment metadata
+      // In production, files would be uploaded to a storage service first
+      await createMaterial(classId, title, description || undefined, topic || undefined, attachments.length > 0 ? attachments : undefined);
       toast.success('Material added successfully!');
       resetForm();
       onOpenChange(false);
@@ -118,6 +155,13 @@ export function CreateMaterialDialog({ classId, open, onOpenChange, onCreated }:
     setTopic('');
     setUseTemplate(false);
     setSelectedTemplateId('');
+    // Clean up blob URLs
+    attachments.forEach(att => {
+      if (att.url.startsWith('blob:')) {
+        URL.revokeObjectURL(att.url);
+      }
+    });
+    setAttachments([]);
   };
 
   return (
@@ -195,6 +239,57 @@ export function CreateMaterialDialog({ classId, open, onOpenChange, onCreated }:
               onChange={(e) => setTopic(e.target.value)}
               placeholder="e.g., Chapter 5"
             />
+          </div>
+
+          {/* File Attachments */}
+          <div className="space-y-2">
+            <Label>Attachments (optional)</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+              id="file-upload"
+            />
+            <div className="space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Files
+              </Button>
+              {attachments.length > 0 && (
+                <div className="space-y-2">
+                  {attachments.map((attachment, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-muted rounded-lg"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm truncate">{attachment.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          ({attachment.type})
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAttachment(index)}
+                        className="h-6 w-6 shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-between items-center pt-4 border-t">

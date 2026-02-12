@@ -21,3 +21,14 @@ public record QuestionSetResponse(
     string DueDate,
     string CreatedAt
 );
+
+public record QuestionSetSubmissionResponse(
+    string Id,
+    string StudentId,
+    string StudentName,
+    string SubmittedAt,
+    int Score,
+    int TotalPoints,
+    string Status,
+    int? TimeTaken
+);
